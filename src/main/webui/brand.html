@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PhoneZone – Điện thoại theo hãng</title>
+  <meta name="description" content="Xem tất cả điện thoại chính hãng theo từng thương hiệu tại PhoneZone."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="./style.css"/>
+  <style>
+    /* ── BRAND PAGE SPECIFIC ── */
+    .brand-page-hero{
+      padding:64px 0 40px;
+      background:linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 60%,#16213e 100%);
+      border-bottom:1px solid var(--border);
+      position:relative;overflow:hidden;
+    }
+    .brand-page-hero::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse 60% 80% at 80% 50%, rgba(230,57,70,.12) 0%, transparent 70%);
+    }
+    .brand-hero-inner{display:flex;align-items:center;gap:28px;position:relative}
+    .brand-hero-emoji{font-size:4rem;line-height:1;filter:drop-shadow(0 4px 24px rgba(0,0,0,.5))}
+    .brand-hero-text h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;margin-bottom:6px}
+    .brand-hero-text p{color:var(--text2);font-size:.95rem}
+    .brand-hero-count{
+      margin-left:auto;background:rgba(255,255,255,.06);border:1px solid var(--border);
+      border-radius:var(--radius);padding:16px 28px;text-align:center;
+    }
+    .brand-hero-count strong{display:block;font-size:2rem;font-weight:900;color:var(--primary)}
+    .brand-hero-count span{font-size:.78rem;color:var(--text2)}
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text2);margin-bottom:32px;flex-wrap:wrap}
+    .breadcrumb a{color:var(--text2);transition:.2s}
+    .breadcrumb a:hover{color:#fff}
+    .breadcrumb .sep{font-size:.65rem;opacity:.5}
+
+    /* ── FILTERS ── */
+    .filters-bar{display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:28px;flex-wrap:wrap}
+    .filter-label{font-size:.82rem;color:var(--text2);font-weight:600}
+    .sort-select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:9px;font-size:.85rem;cursor:pointer;outline:none;font-family:'Inter',sans-serif}
+    .sort-select:focus{border-color:var(--primary)}
+    .result-count{margin-left:auto;font-size:.82rem;color:var(--text2)}
+    .result-count strong{color:#fff}
+
+    /* ── BRAND SWITCHER ── */
+    .brand-switcher{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:20px 0;flex-wrap:wrap}
+    .brand-switch-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:.2s;min-width:80px;flex-shrink:0}
+    .brand-switch-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+    .brand-switch-btn.active{background:var(--primary);border-color:var(--primary)}
+    .brand-switch-btn .sw-emoji{font-size:1.4rem}
+    .brand-switch-btn .sw-name{font-size:.72rem;font-weight:700}
+
+    /* ── EMPTY STATE ── */
+    .empty-state{text-align:center;padding:80px 20px;color:var(--text2)}
+    .empty-state i{font-size:3rem;margin-bottom:16px;display:block;opacity:.4}
+    .empty-state h3{font-size:1.1rem;font-weight:700;margin-bottom:8px;color:var(--text)}
+    .empty-state p{font-size:.87rem}
+
+    .brand-page-section{padding:40px 0 80px}
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-inner container">
+    <span><i class="fa fa-phone-alt"></i> Hotline: <strong>1800 1234</strong> (Miễn phí)</span>
+    <span class="topbar-center"><i class="fa fa-shield-alt"></i> Bảo hành chính hãng – Đổi trả 30 ngày</span>
+    <span><i class="fa fa-tag"></i> Giảm thêm 500K khi thanh toán online</span>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<header class="navbar" id="navbar">
+  <div class="container navbar-inner">
+    <a href="./index.html" class="logo">Phone<span>Zone</span></a>
+
+    <!-- MEGA MENU TRIGGER -->
+    <div class="brand-menu-wrap">
+      <button class="brand-menu-btn" id="brandMenuBtn">
+        <i class="fa fa-th-large"></i> Danh mục <i class="fa fa-chevron-down caret"></i>
+      </button>
+      <div class="brand-dropdown" id="brandDropdown">
+        <div class="brand-dropdown-grid" id="brandDropdownGrid"></div>
+      </div>
+    </div>
+
+    <nav class="nav-links" id="navLinks">
+      <a href="./index.html" class="nav-link">Trang chủ</a>
+      <div class="nav-dropdown-wrap">
+        <a href="./index.html#phones" class="nav-link nav-link-has-dropdown active">Điện thoại <i class="fa fa-chevron-down nav-caret"></i></a>
+        <div class="nav-dropdown" id="phoneNavDropdown"></div>
+      </div>
+      <a href="./index.html#accessory" class="nav-link">Phụ kiện</a>
+      <a href="./index.html#deal"      class="nav-link deal-link">🔥 Flash Sale</a>
+      <a href="./index.html#contact"   class="nav-link">Liên hệ</a>
+    </nav>
+
+    <div class="nav-actions">
+      <div class="search-box">
+        <input type="text" placeholder="Tìm điện thoại, phụ kiện..." id="searchInput"/>
+        <button id="searchBtn" aria-label="Tìm kiếm"><i class="fa fa-search"></i></button>
+      </div>
+      <button class="icon-btn" id="wishlistBtn" aria-label="Yêu thích">
+        <i class="far fa-heart"></i><span class="badge" id="wishlistCount">0</span>
+      </button>
+      <button class="icon-btn" id="cartBtn" aria-label="Giỏ hàng">
+        <i class="fa fa-shopping-cart"></i><span class="badge" id="cartCount">0</span>
+      </button>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- BRAND PAGE HERO -->
+<section class="brand-page-hero" id="brandHero">
+  <div class="container">
+    <div class="brand-hero-inner">
+      <div class="brand-hero-emoji" id="heroEmoji">📱</div>
+      <div class="brand-hero-text">
+        <h1 id="heroTitle">Đang tải...</h1>
+        <p id="heroSub">Khám phá các mẫu điện thoại chính hãng mới nhất</p>
+      </div>
+      <div class="brand-hero-count">
+        <strong id="heroCount">0</strong>
+        <span>sản phẩm</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<section class="brand-page-section">
+  <div class="container">
+
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb">
+      <a href="./index.html"><i class="fa fa-home"></i> Trang chủ</a>
+      <span class="sep"><i class="fa fa-chevron-right"></i></span>
+      <a href="./index.html#phones">Điện thoại</a>
+      <span class="sep"><i class="fa fa-chevron-right"></i></span>
+      <span id="breadcrumbBrand">Hãng</span>
+    </div>
+
+    <!-- BRAND SWITCHER -->
+    <div class="brand-switcher" id="brandSwitcher"></div>
+
+    <!-- FILTERS -->
+    <div class="filters-bar">
+      <span class="filter-label">Sắp xếp:</span>
+      <select class="sort-select" id="sortSelect">
+        <option value="default">Mặc định</option>
+        <option value="price-asc">Giá tăng dần</option>
+        <option value="price-desc">Giá giảm dần</option>
+        <option value="rating">Đánh giá cao nhất</option>
+        <option value="reviews">Nhiều đánh giá nhất</option>
+      </select>
+      <span class="result-count">Tìm thấy <strong id="resultCount">0</strong> sản phẩm</span>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div class="products-grid" id="productsGrid"></div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="emptyState" style="display:none">
+      <i class="fa fa-search"></i>
+      <h3>Không tìm thấy sản phẩm</h3>
+      <p>Hãng này chưa có sản phẩm hoặc đang được cập nhật.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="./index.html" class="logo">Phone<span>Zone</span></a>
+      <p>Chuỗi cửa hàng điện thoại chính hãng hàng đầu Việt Nam. Uy tín – Chất lượng – Giá tốt nhất.</p>
+      <div class="social-links">
+        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Điện thoại theo hãng</h4>
+      <ul id="footerBrandLinks"></ul>
+    </div>
+    <div class="footer-col">
+      <h4>Hỗ trợ & Chính sách</h4>
+      <ul>
+        <li><a href="#">Chính sách bảo hành</a></li>
+        <li><a href="#">Hướng dẫn đặt hàng</a></li>
+        <li><a href="#">Trả góp 0%</a></li>
+        <li><a href="#">Liên hệ hỗ trợ</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Liên hệ</h4>
+      <ul class="contact-list">
+        <li><i class="fa fa-map-marker-alt"></i> 123 Cầu Giấy, Hà Nội</li>
+        <li><i class="fa fa-phone"></i> 1800 1234 (miễn phí)</li>
+        <li><i class="fa fa-envelope"></i> lienhe@phonezone.vn</li>
+        <li><i class="fa fa-clock"></i> 8:00 – 22:00 mỗi ngày</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container footer-bottom-inner">
+      <p>© 2025 PhoneZone. Bảo lưu mọi quyền.</p>
+      <div class="payment-icons">
+        <i class="fab fa-cc-visa"></i>
+        <i class="fab fa-cc-mastercard"></i>
+        <i class="fab fa-cc-paypal"></i>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- CART SIDEBAR -->
+<div class="cart-overlay" id="cartOverlay"></div>
+<aside class="cart-sidebar" id="cartSidebar">
+  <div class="cart-header">
+    <h3><i class="fa fa-shopping-cart"></i> Giỏ hàng (<span id="cartItemCount">0</span>)</h3>
+    <button class="close-cart" id="closeCart"><i class="fa fa-times"></i></button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total">Tổng cộng: <strong id="cartTotal">0đ</strong></div>
+    <button class="btn btn-primary full">Thanh Toán <i class="fa fa-arrow-right"></i></button>
+    <p class="cart-note"><i class="fa fa-lock"></i> Thanh toán bảo mật SSL 256-bit</p>
+  </div>
+</aside>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" id="backToTop" aria-label="Lên đầu trang"><i class="fa fa-chevron-up"></i></button>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module" src="./brand.js"></script>
+</body>
+</html>
