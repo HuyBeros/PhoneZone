@@ -2,11 +2,13 @@ import { useCart } from '../store/CartContext';
 import { usePoints } from '../store/PointsContext';
 import { fmt } from '../utils/utils';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function CartSidebar() {
   const { cart, cartCount, cartTotal, cartOpen, closeCart, removeFromCart } = useCart();
   const { appliedCoupon, applyCoupon, removeCoupon, markCouponUsed, addPoints } = usePoints();
   const [couponInput, setCouponInput] = useState('');
+  const navigate = useNavigate();
 
   const discount    = appliedCoupon ? appliedCoupon.discount : 0;
   const finalTotal  = Math.max(0, cartTotal - discount);
@@ -21,12 +23,8 @@ export default function CartSidebar() {
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
-    // Tích điểm sau khi thanh toán
-    addPoints(finalTotal);
-    // Đánh dấu coupon đã dùng
-    if (appliedCoupon) markCouponUsed(appliedCoupon.code);
-    alert(`✅ Đặt hàng thành công!\nTổng: ${fmt(finalTotal)}\n⭐ Nhận được ${pointsEarn} điểm thưởng!`);
     closeCart();
+    navigate('/checkout');
   };
 
   return (

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { BRANDS } from '../data/data';
+import { Link, useNavigate } from 'react-router-dom';
+import { BRANDS, PHONES } from '../data/data';
+import { fmt } from '../utils/utils';
 import { useCart } from '../store/CartContext';
 import { usePoints } from '../store/PointsContext';
 
@@ -107,13 +108,21 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => localStorage.getItem('pz_logged') === '1'
   );
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  
   const megaRef = useRef(null);
+  const searchRef = useRef(null);
+  const navigate = useNavigate();
 
   // Đóng mega menu khi click ngoài
   useEffect(() => {
     const handler = (e) => {
       if (megaRef.current && !megaRef.current.contains(e.target)) {
         setMegaOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchTerm('');
       }
     };
     document.addEventListener('mousedown', handler);
@@ -140,6 +149,22 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('pz_logged');
     setIsLoggedIn(false);
+  };
+
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearchTerm(val);
+    if (val.trim().length > 1) {
+      const lower = val.toLowerCase();
+      setSearchResults(PHONES.filter(p => p.name.toLowerCase().includes(lower)).slice(0, 5));
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const goToProduct = (id) => {
+    setSearchTerm('');
+    navigate(`/product/${id}`);
   };
 
   return (
@@ -181,9 +206,28 @@ export default function Navbar() {
 
         {/* Actions */}
         <div className="nav-actions">
-          <div className="search-box">
-            <input type="text" placeholder="Tìm điện thoại, phụ kiện..." id="searchInput" />
+          <div className="search-box" ref={searchRef}>
+            <input 
+              type="text" 
+              placeholder="Tìm điện thoại..." 
+              value={searchTerm}
+              onChange={handleSearch}
+            />
             <button aria-label="Tìm kiếm"><i className="fa fa-search"></i></button>
+            
+            {searchTerm.length > 1 && searchResults.length > 0 && (
+              <div className="search-results">
+                {searchResults.map(p => (
+                  <div key={p.id} className="search-result-item" onClick={() => goToProduct(p.id)}>
+                    <img src={p.img} alt={p.name} />
+                    <div className="sr-info">
+                      <div className="sr-name">{p.name}</div>
+                      <div className="sr-price">{fmt(p.price)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <Link to="/rewards" className="icon-btn rewards-nav-btn" title="Điểm thưởng">

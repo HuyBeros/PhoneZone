@@ -1,12 +1,17 @@
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../store/CartContext';
+import { useCompare } from '../store/CompareContext';
 import { fmt, discount } from '../utils/utils';
 
 export default function ProductCard({ product: p }) {
   const { addToCart } = useCart();
+  const { compareIds, toggleCompare } = useCompare();
+  const navigate = useNavigate();
   const disc = p.oldPrice ? discount(p.price, p.oldPrice) : '';
+  const isCompared = compareIds.includes(p.id);
 
   return (
-    <div className="product-card">
+    <div className="product-card" onClick={() => navigate(`/product/${p.id}`)}>
       <div className="product-badges">
         {p.isNew            && <span className="badge-tag badge-new">Mới</span>}
         {p.badge === 'sale' && <span className="badge-tag badge-sale">Sale</span>}
@@ -39,8 +44,12 @@ export default function ProductCard({ product: p }) {
           >
             <i className="fa fa-cart-plus"></i> Mua ngay
           </button>
-          <button className="btn-view" title="Xem nhanh">
-            <i className="fa fa-eye"></i>
+          <button 
+            className={`btn-view ${isCompared ? 'compared' : ''}`} 
+            title={isCompared ? "Đã thêm vào so sánh" : "Thêm vào so sánh"}
+            onClick={(e) => { e.stopPropagation(); toggleCompare(p.id); }}
+          >
+            <i className="fa fa-balance-scale"></i>
           </button>
         </div>
       </div>

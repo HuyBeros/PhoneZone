@@ -7,6 +7,7 @@ import ProductCard from '../components/ProductCard';
 export default function BrandPage() {
   const { brandId } = useParams();           // e.g. "iphone" | "all"
   const [sort, setSort]     = useState('default');
+  const [priceFilter, setPriceFilter] = useState('all');
   const [current, setCurrent] = useState(brandId || 'all');
 
   // Sync khi URL thay đổi
@@ -19,6 +20,13 @@ export default function BrandPage() {
 
   const getList = () => {
     let list = current === 'all' ? PHONES : PHONES.filter(p => p.brand === current);
+    
+    // Apply price filter
+    if (priceFilter === 'under10') list = list.filter(p => p.price < 10000000);
+    else if (priceFilter === '10to20') list = list.filter(p => p.price >= 10000000 && p.price <= 20000000);
+    else if (priceFilter === 'over20') list = list.filter(p => p.price > 20000000);
+
+    // Apply sort
     switch (sort) {
       case 'price-asc':  return [...list].sort((a, b) => a.price - b.price);
       case 'price-desc': return [...list].sort((a, b) => b.price - a.price);
@@ -87,14 +95,25 @@ export default function BrandPage() {
 
           {/* ── Filters ── */}
           <div className="filters-bar">
-            <span className="filter-label">Sắp xếp:</span>
-            <select className="sort-select" value={sort} onChange={e => setSort(e.target.value)}>
-              <option value="default">Mặc định</option>
-              <option value="price-asc">Giá tăng dần</option>
-              <option value="price-desc">Giá giảm dần</option>
-              <option value="rating">Đánh giá cao nhất</option>
-              <option value="reviews">Nhiều đánh giá nhất</option>
-            </select>
+            <div className="filter-group">
+              <span className="filter-label">Mức giá:</span>
+              <select className="sort-select" value={priceFilter} onChange={e => setPriceFilter(e.target.value)}>
+                <option value="all">Tất cả các mức giá</option>
+                <option value="under10">Dưới 10 triệu</option>
+                <option value="10to20">Từ 10 - 20 triệu</option>
+                <option value="over20">Trên 20 triệu</option>
+              </select>
+            </div>
+            <div className="filter-group">
+              <span className="filter-label">Sắp xếp:</span>
+              <select className="sort-select" value={sort} onChange={e => setSort(e.target.value)}>
+                <option value="default">Mặc định</option>
+                <option value="price-asc">Giá tăng dần</option>
+                <option value="price-desc">Giá giảm dần</option>
+                <option value="rating">Đánh giá cao nhất</option>
+                <option value="reviews">Nhiều đánh giá nhất</option>
+              </select>
+            </div>
             <span className="result-count">Tìm thấy <strong>{list.length}</strong> sản phẩm</span>
           </div>
 

@@ -86,22 +86,6 @@ function HeroSlider() {
   );
 }
 
-/* ── Brand Bar ───────────────────────────────────────── */
-function BrandBar({ active, onChange }) {
-  return (
-    <section className="brand-bar">
-      <div className="container brand-bar-inner">
-        <button className={`brand-pill${active === 'all' ? ' active' : ''}`} onClick={() => onChange('all')}>Tất cả</button>
-        {BRANDS.map(b => (
-          <button key={b.id} className={`brand-pill${active === b.id ? ' active' : ''}`} onClick={() => onChange(b.id)}>
-            {b.emoji} {b.name}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 
 /* ── Brands Section ──────────────────────────────────── */
 function BrandsSection({ activeBrand, onChange }) {
@@ -222,15 +206,9 @@ function Newsletter() {
 export default function HomePage() {
   const [activeBrand, setActiveBrand] = useState('all');
 
-  const handleBrandChange = (id) => {
-    setActiveBrand(id);
-    document.getElementById('phones')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <>
       <HeroSlider />
-      <BrandBar active={activeBrand} onChange={handleBrandChange} />
       <BrandsSection activeBrand={activeBrand} onChange={setActiveBrand} />
       <AccessorySection />
       <WhySection />
