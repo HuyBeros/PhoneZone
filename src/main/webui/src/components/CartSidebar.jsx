@@ -10,7 +10,7 @@ export default function CartSidebar() {
   const [couponInput, setCouponInput] = useState('');
   const navigate = useNavigate();
 
-  const discount    = appliedCoupon ? appliedCoupon.discount : 0;
+  const discount    = appliedCoupon ? appliedCoupon.discountAmount || appliedCoupon.discount : 0;
   const finalTotal  = Math.max(0, cartTotal - discount);
   const pointsEarn  = Math.floor(finalTotal / 10000);
 

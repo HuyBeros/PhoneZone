@@ -1,38 +1,76 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import { PHONES, ACCESSORIES } from '../data/data';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useToast } from './ToastContext';
+import { useAuth } from './AuthContext';
+import { fetchApi } from '../api/apiClient';
 
 const CartContext = createContext();
-const ALL_PRODUCTS = [...PHONES, ...ACCESSORIES];
 
 export function CartProvider({ children }) {
   const { showToast } = useToast();
+  const { token, user } = useAuth();
 
-  const [cart, setCart] = useState(() =>
-    JSON.parse(localStorage.getItem('pz_cart') || '[]')
-  );
+  const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
 
-  const addToCart = useCallback((id) => {
-    const p = ALL_PRODUCTS.find(x => x.id === id);
-    setCart(prev => {
-      const ex = prev.find(x => x.id === id);
-      const next = ex
-        ? prev.map(x => x.id === id ? { ...x, qty: x.qty + 1 } : x)
-        : [...prev, { ...p, qty: 1 }];
-      localStorage.setItem('pz_cart', JSON.stringify(next));
-      return next;
-    });
-    showToast(`🛒 Đã thêm "${p.name}" vào giỏ hàng!`);
-  }, [showToast]);
+  // Fetch cart items from API
+  const fetchCart = useCallback(async () => {
+    if (!token) {
+      setCart([]);
+      return;
+    }
+    try {
+      const data = await fetchApi('/cart');
+      // data: { items: [], cartTotal: 0, cartCount: 0 }
+      // need to map items to match frontend structure 
+      // item = { id: cartItemId, productId, productName, productImage, price, quantity, itemTotal }
+      const mapped = data.items.map(i => ({
+        cartItemId: i.id, // ID của record CartItem
+        id: i.productId,  // ID của Product (để match component)
+        name: i.productName,
+        img: i.productImage,
+        price: i.price,
+        qty: i.quantity,
+      }));
+      setCart(mapped);
+    } catch (e) {
+      console.error("Lỗi lấy giỏ hàng", e);
+    }
+  }, [token]);
 
-  const removeFromCart = useCallback((id) => {
-    setCart(prev => {
-      const next = prev.filter(x => x.id !== id);
-      localStorage.setItem('pz_cart', JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  useEffect(() => {
+    fetchCart();
+  }, [fetchCart]);
+
+  const addToCart = useCallback(async (productId, qty = 1) => {
+    if (!token) {
+      alert("Vui lòng đăng nhập để thêm vào giỏ hàng");
+      return;
+    }
+    try {
+      await fetchApi('/cart', {
+        method: 'POST',
+        body: JSON.stringify({ productId, quantity: qty })
+      });
+      showToast('🛒 Đã thêm sản phẩm vào giỏ hàng!');
+      fetchCart(); // reload giỏ hàng
+    } catch (e) {
+      alert(e.message || "Lỗi thêm giỏ hàng");
+    }
+  }, [token, showToast, fetchCart]);
+
+  const removeFromCart = useCallback(async (productId) => {
+    if (!token) return;
+    try {
+      // Find cartItemId based on productId
+      const item = cart.find(x => x.id === productId);
+      if (!item) return;
+      
+      await fetchApi(`/cart/${item.cartItemId}`, { method: 'DELETE' });
+      fetchCart();
+    } catch (e) {
+      alert(e.message || "Lỗi xóa sản phẩm khỏi giỏ hàng");
+    }
+  }, [token, cart, fetchCart]);
 
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const cartTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
@@ -41,7 +79,7 @@ export function CartProvider({ children }) {
     <CartContext.Provider value={{
       cart, cartCount, cartTotal,
       cartOpen, openCart: () => setCartOpen(true), closeCart: () => setCartOpen(false),
-      addToCart, removeFromCart,
+      addToCart, removeFromCart, fetchCart
     }}>
       {children}
     </CartContext.Provider>

@@ -1,0 +1,56 @@
+╔══════════════════════════════════════════════════════════════╗
+║          🚀 MIGRATION: data.js → API - QUICK START          ║
+╚══════════════════════════════════════════════════════════════╝
+
+✅ ĐÃ HOÀN THÀNH:
+   - Backend: Category entity, Service, Controller
+   - Frontend: useBrands hook, Navbar, HomePage, BrandPage
+   - Database: Migration SQL với 11 brands
+   - Docs: 5 files hướng dẫn chi tiết
+
+📋 CẦN LÀM NGAY (3 BƯỚC):
+
+1️⃣  CHẠY MIGRATION DATABASE
+    ./mvnw quarkus:dev
+    (Hoặc chạy thủ công: V2__add_brand_fields.sql)
+
+2️⃣  TEST API
+    curl http://localhost:8080/api/categories/brands
+    (Phải trả về 11 brands)
+
+3️⃣  START FRONTEND
+    cd src/main/webui && npm run dev
+    (Mở http://localhost:5173)
+
+🔍 KIỂM TRA:
+   ✓ Navbar dropdown có logo brands
+   ✓ HomePage brand tabs có logo brands
+   ✓ BrandPage brand switcher có logo brands
+   ✓ Click brand → Lọc sản phẩm đúng
+
+📖 ĐỌC THÊM:
+   - START_HERE.md      → Hướng dẫn đầy đủ
+   - CHECKLIST.md       → Checklist chi tiết
+   - SETUP_MIGRATION.md → Troubleshooting
+
+🎯 KẾT QUẢ:
+   ❌ TRƯỚC: import { BRANDS } from '../data/data'
+   ✅ SAU:   const { brands } = useBrands()
+
+💡 LỢI ÍCH:
+   ✓ Dữ liệu động từ database
+   ✓ Admin thêm brand → Hiển thị ngay
+   ✓ Không cần deploy khi thay đổi
+   ✓ Dễ bảo trì và mở rộng
+
+🚨 LƯU Ý:
+   - PHẢI chạy migration trước khi test!
+   - Backup database trước khi chạy migration
+   - Kiểm tra port 8080 không bị chiếm
+
+📞 HELP:
+   - API 404? → Backend chưa start
+   - Empty brands? → Migration chưa chạy
+   - CORS error? → Check backend config
+
+Good luck! 🎉

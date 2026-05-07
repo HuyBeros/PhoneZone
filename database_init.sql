@@ -134,3 +134,58 @@ CREATE TABLE IF NOT EXISTS cart_items (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, product_id)
 );
+
+-- ==========================================
+-- 6. QUẢN LÝ DỊCH VỤ SỬA CHỮA
+-- ==========================================
+
+-- Bảng danh sách các dịch vụ sửa chữa có sẵn
+CREATE TABLE IF NOT EXISTS repair_services (
+    id SERIAL PRIMARY KEY,
+    ten_dich_vu VARCHAR(500) NOT NULL,
+    gia_hien_thi VARCHAR(50),
+    gia_so BIGINT DEFAULT 0,
+    link TEXT,
+    thoi_gian_cao TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_repair_services_ten ON repair_services(ten_dich_vu);
+
+-- Bảng yêu cầu sửa chữa từ khách hàng
+CREATE TABLE IF NOT EXISTS repairs (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE SET NULL, -- Có thể NULL nếu là Guest
+    
+    -- Thông tin khách hàng
+    customer_name VARCHAR(100) NOT NULL,
+    customer_phone VARCHAR(20) NOT NULL,
+    customer_email VARCHAR(100),
+    
+    -- Thông tin thiết bị
+    device_type VARCHAR(100) NOT NULL, -- iPhone, Samsung, Xiaomi, etc.
+    device_model VARCHAR(200) NOT NULL, -- iPhone 13 Pro, Galaxy S21, etc.
+    
+    -- Thông tin sửa chữa
+    issue_description TEXT NOT NULL,
+    repair_service VARCHAR(200) NOT NULL, -- Tên dịch vụ sửa chữa
+    estimated_cost BIGINT, -- Chi phí dự kiến
+    
+    -- Trạng thái và ưu tiên
+    status VARCHAR(50) DEFAULT 'PENDING', -- PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
+    priority VARCHAR(20) DEFAULT 'NORMAL', -- NORMAL, URGENT
+    
+    -- Thời gian
+    appointment_date TIMESTAMP, -- Ngày hẹn
+    completion_date TIMESTAMP, -- Ngày hoàn thành
+    
+    -- Ghi chú kỹ thuật viên
+    technician_notes TEXT,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_repairs_user_id ON repairs(user_id);
+CREATE INDEX idx_repairs_status ON repairs(status);
+CREATE INDEX idx_repairs_created_at ON repairs(created_at);

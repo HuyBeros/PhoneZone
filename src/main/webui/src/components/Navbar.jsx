@@ -1,18 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BRANDS, PHONES } from '../data/data';
-import { fmt } from '../utils/utils';
+import { BRANDS } from '../data/data';
+import { fmt, mapProduct } from '../utils/utils';
 import { useCart } from '../store/CartContext';
 import { usePoints } from '../store/PointsContext';
-
-/* ── Mock user state (thay bằng AuthContext thực khi có backend) ── */
-const MOCK_USER = {
-  name: 'Nguyễn Văn A',
-  email: 'nguyenvana@email.com',
-  avatar: null, // null = dùng initials
-};
+import { useAuth } from '../store/AuthContext';
+import { fetchApi } from '../api/apiClient';
 
 function getInitials(name) {
+  if (!name) return 'U';
   return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase();
 }
 
@@ -24,12 +20,12 @@ function UserDropdown({ user, onLogout }) {
       <div className="user-trigger">
         <div className="user-avatar">
           {user.avatar
-            ? <img src={user.avatar} alt={user.name} />
-            : <span>{getInitials(user.name)}</span>
+            ? <img src={user.avatar} alt={user.fullName || user.username} />
+            : <span>{getInitials(user.fullName || user.username)}</span>
           }
         </div>
         <div className="user-info-mini">
-          <span className="user-name-mini">{user.name.split(' ').pop()}</span>
+          <span className="user-name-mini">{(user.fullName || user.username).split(' ').pop()}</span>
           <i className="fa fa-chevron-down user-caret"></i>
         </div>
       </div>
@@ -40,13 +36,13 @@ function UserDropdown({ user, onLogout }) {
         <div className="ud-header">
           <div className="ud-avatar">
             {user.avatar
-              ? <img src={user.avatar} alt={user.name} />
-              : <span>{getInitials(user.name)}</span>
+              ? <img src={user.avatar} alt={user.fullName || user.username} />
+              : <span>{getInitials(user.fullName || user.username)}</span>
             }
           </div>
           <div className="ud-info">
-            <div className="ud-name">{user.name}</div>
-            <div className="ud-email">{user.email}</div>
+            <div className="ud-name">{user.fullName || user.username}</div>
+            <div className="ud-email">{user.email || 'Thành viên PhoneZone'}</div>
           </div>
         </div>
 
@@ -91,7 +87,7 @@ function UserDropdown({ user, onLogout }) {
           <span className="ud-item-icon ud-icon-red"><i className="fa fa-sign-out-alt"></i></span>
           <div>
             <div className="ud-item-label">Đăng xuất</div>
-            <div className="ud-item-sub">Tạm biệt, {user.name.split(' ').pop()}!</div>
+            <div className="ud-item-sub">Tạm biệt, {(user.fullName || user.username).split(' ').pop()}!</div>
           </div>
         </button>
       </div>
@@ -103,14 +99,13 @@ function UserDropdown({ user, onLogout }) {
 export default function Navbar() {
   const { cartCount, openCart } = useCart();
   const { points } = usePoints();
+  const { user, logout } = useAuth();
+
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    () => localStorage.getItem('pz_logged') === '1'
-  );
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  
+
   const megaRef = useRef(null);
   const searchRef = useRef(null);
   const navigate = useNavigate();
@@ -142,21 +137,24 @@ export default function Navbar() {
   const closeMobile = () => setMobileOpen(false);
 
   const handleLogin = () => {
-    localStorage.setItem('pz_logged', '1');
-    setIsLoggedIn(true);
+    navigate('/login');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('pz_logged');
-    setIsLoggedIn(false);
+    logout();
+    navigate('/');
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     const val = e.target.value;
     setSearchTerm(val);
     if (val.trim().length > 1) {
-      const lower = val.toLowerCase();
-      setSearchResults(PHONES.filter(p => p.name.toLowerCase().includes(lower)).slice(0, 5));
+      try {
+        const res = await fetchApi(`/products/search?q=${encodeURIComponent(val)}`);
+        setSearchResults((res || []).slice(0, 5).map(mapProduct));
+      } catch (e) {
+        setSearchResults([]);
+      }
     } else {
       setSearchResults([]);
     }
@@ -183,16 +181,23 @@ export default function Navbar() {
               Điện thoại <i className="fa fa-chevron-down nav-caret"></i>
             </Link>
             <div className="nav-dropdown">
-              {BRANDS.map(b => (
-                <Link
-                  key={b.id}
-                  className="nav-dd-item"
-                  to={`/brand/${b.id}`}
-                  onClick={closeMobile}
-                >
-                  <span className="dd-emoji">{b.emoji}</span> {b.name}
-                </Link>
-              ))}
+              <div className="nav-dropdown-brands">
+                {BRANDS.map(b => (
+                  <Link
+                    key={b.id}
+                    className="nav-dd-item"
+                    to={`/brand/${b.id}`}
+                    onClick={closeMobile}
+                  >
+                    {b.logo ? (
+                      <img src={b.logo} alt={b.name} className="dd-logo" />
+                    ) : (
+                      <span className="dd-dot" style={{ backgroundColor: b.color }}></span>
+                    )}
+                    {b.name}
+                  </Link>
+                ))}
+              </div>
               <div className="nav-dd-divider"></div>
               <Link className="nav-dd-all" to="/brand/all" onClick={closeMobile}>
                 <i className="fa fa-th-large"></i> Xem tất cả hãng
@@ -200,21 +205,26 @@ export default function Navbar() {
             </div>
           </div>
 
-          <Link to="/#accessory" className="nav-link" onClick={closeMobile}>Phụ kiện</Link>
-          <Link to="/#contact" className="nav-link" onClick={closeMobile}>Liên hệ</Link>
+          <Link to="/tablet" className="nav-link" onClick={closeMobile}>
+            Máy tính bảng
+          </Link>
+          <Link to="/repair" className="nav-link" onClick={closeMobile}>
+            Sửa chữa
+          </Link>
+          <Link to="/contact" className="nav-link" onClick={closeMobile}>Liên hệ</Link>
         </nav>
 
         {/* Actions */}
         <div className="nav-actions">
           <div className="search-box" ref={searchRef}>
-            <input 
-              type="text" 
-              placeholder="Tìm điện thoại..." 
+            <input
+              type="text"
+              placeholder="Tìm điện thoại..."
               value={searchTerm}
               onChange={handleSearch}
             />
             <button aria-label="Tìm kiếm"><i className="fa fa-search"></i></button>
-            
+
             {searchTerm.length > 1 && searchResults.length > 0 && (
               <div className="search-results">
                 {searchResults.map(p => (
@@ -235,15 +245,14 @@ export default function Navbar() {
             <span className="badge rewards-badge">{points}</span>
           </Link>
 
-
           <button className="icon-btn" aria-label="Giỏ hàng" onClick={openCart}>
             <i className="fa fa-shopping-cart"></i>
             <span className="badge">{cartCount}</span>
           </button>
 
           {/* User section */}
-          {isLoggedIn ? (
-            <UserDropdown user={MOCK_USER} onLogout={handleLogout} />
+          {user ? (
+            <UserDropdown user={user} onLogout={handleLogout} />
           ) : (
             <button className="btn-login" onClick={handleLogin}>
               <i className="fa fa-user-circle"></i>

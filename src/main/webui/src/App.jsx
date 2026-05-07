@@ -18,6 +18,11 @@ import ProfilePage from './pages/ProfilePage';
 import OrdersPage from './pages/OrdersPage';
 import RewardsPage from './pages/RewardsPage';
 import ComparePage from './pages/ComparePage';
+import LoginPage from './pages/LoginPage';
+import ContactPage from './pages/ContactPage';
+import RepairPage from './pages/RepairPage';
+import RepairDetailPage from './pages/RepairDetailPage';
+import TabletPage from './pages/TabletPage';
 
 export default function App() {
   return (
@@ -36,6 +41,11 @@ export default function App() {
               <Route path="/orders"         element={<OrdersPage />} />
               <Route path="/rewards"        element={<RewardsPage />} />
               <Route path="/compare"        element={<ComparePage />} />
+              <Route path="/login"          element={<LoginPage />} />
+              <Route path="/contact"        element={<ContactPage />} />
+              <Route path="/repair"         element={<RepairPage />} />
+              <Route path="/repair/:id"     element={<RepairDetailPage />} />
+              <Route path="/tablet"         element={<TabletPage />} />
             </Routes>
           </main>
           <Footer />

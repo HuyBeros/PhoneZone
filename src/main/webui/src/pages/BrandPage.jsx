@@ -1,25 +1,56 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { BRANDS, PHONES } from '../data/data';
-import { fmt, discount } from '../utils/utils';
+import { BRANDS } from '../data/data';
+import { mapProduct } from '../utils/utils';
 import ProductCard from '../components/ProductCard';
+import { fetchApi } from '../api/apiClient';
+
+const PAGE_SIZE = 15;
 
 export default function BrandPage() {
-  const { brandId } = useParams();           // e.g. "iphone" | "all"
-  const [sort, setSort]     = useState('default');
+  const { brandId } = useParams();
+  const [sort, setSort] = useState('default');
   const [priceFilter, setPriceFilter] = useState('all');
   const [current, setCurrent] = useState(brandId || 'all');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Sync khi URL thay đổi
   useEffect(() => {
     setCurrent(brandId || 'all');
+    setVisibleCount(PAGE_SIZE); // reset về 15 khi đổi hãng
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [brandId]);
 
+  // Fetch products when current brand changes
+  useEffect(() => {
+    setLoading(true);
+    const url = current === 'all' ? '/products?size=100' : `/products?brand=${current}&size=100`;
+    fetchApi(url)
+      .then(res => {
+        if (res && res.data) {
+           setProducts(res.data.map(mapProduct));
+        } else if (Array.isArray(res)) {
+           setProducts(res.map(mapProduct));
+        } else {
+           setProducts([]);
+        }
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
+  }, [current]);
+
+  // Reset visible count khi filter/sort thay đổi
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [priceFilter, sort]);
+
   const brandObj = BRANDS.find(b => b.id === current) || null;
 
-  const getList = () => {
-    let list = current === 'all' ? PHONES : PHONES.filter(p => p.brand === current);
+  const list = useMemo(() => {
+    let list = [...products];
     
     // Apply price filter
     if (priceFilter === 'under10') list = list.filter(p => p.price < 10000000);
@@ -28,14 +59,17 @@ export default function BrandPage() {
 
     // Apply sort
     switch (sort) {
-      case 'price-asc':  return [...list].sort((a, b) => a.price - b.price);
-      case 'price-desc': return [...list].sort((a, b) => b.price - a.price);
-      case 'rating':     return [...list].sort((a, b) => b.rating - a.rating);
-      case 'reviews':    return [...list].sort((a, b) => b.reviews - a.reviews);
+      case 'price-asc':  return list.sort((a, b) => a.price - b.price);
+      case 'price-desc': return list.sort((a, b) => b.price - a.price);
+      case 'rating':     return list.sort((a, b) => b.rating - a.rating);
+      case 'reviews':    return list.sort((a, b) => b.reviews - a.reviews);
       default:           return list;
     }
-  };
-  const list = getList();
+  }, [products, priceFilter, sort]);
+
+  const visibleList = list.slice(0, visibleCount);
+  const hasMore = visibleCount < list.length;
+  const remaining = list.length - visibleCount;
 
   return (
     <>
@@ -43,7 +77,11 @@ export default function BrandPage() {
       <section className="brand-page-hero">
         <div className="container">
           <div className="brand-hero-inner">
-            <div className="brand-hero-emoji">{brandObj ? brandObj.emoji : '📱'}</div>
+            {brandObj && brandObj.logo ? (
+              <img src={brandObj.logo} alt={brandObj.name} className="brand-hero-logo" />
+            ) : (
+              <div className="brand-hero-emoji">{brandObj ? brandObj.emoji : '📱'}</div>
+            )}
             <div className="brand-hero-text">
               <h1>Điện thoại {brandObj ? brandObj.name : 'Tất cả hãng'}</h1>
               <p>Khám phá {list.length} mẫu {brandObj ? brandObj.name : ''} chính hãng mới nhất</p>
@@ -87,7 +125,11 @@ export default function BrandPage() {
                 to={`/brand/${b.id}`}
                 className={`brand-switch-btn${current === b.id ? ' active' : ''}`}
               >
-                <span className="sw-emoji">{b.emoji}</span>
+                {b.logo ? (
+                  <img src={b.logo} alt={b.name} className="sw-logo" />
+                ) : (
+                  <span className="sw-emoji">{b.emoji}</span>
+                )}
                 <span className="sw-name">{b.name}</span>
               </Link>
             ))}
@@ -114,14 +156,45 @@ export default function BrandPage() {
                 <option value="reviews">Nhiều đánh giá nhất</option>
               </select>
             </div>
-            <span className="result-count">Tìm thấy <strong>{list.length}</strong> sản phẩm</span>
+            <span className="result-count">
+              Hiển thị <strong>{visibleList.length}</strong> / <strong>{list.length}</strong> sản phẩm
+            </span>
           </div>
 
           {/* ── Product Grid ── */}
-          {list.length > 0 ? (
-            <div className="products-grid">
-              {list.map(p => <ProductCard key={p.id} product={p} />)}
+          {loading ? (
+            <div className="empty-state">
+              <i className="fa fa-spinner fa-spin"></i>
+              <h3>Đang tải sản phẩm...</h3>
             </div>
+          ) : list.length > 0 ? (
+            <>
+              <div className="products-grid">
+                {visibleList.map(p => <ProductCard key={p.id} product={p} />)}
+              </div>
+
+              {/* ── Load More ── */}
+              {hasMore && (
+                <div className="load-more-wrap">
+                  <button
+                    className="btn-load-more"
+                    onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+                  >
+                    <i className="fa fa-chevron-down"></i>
+                    Xem thêm {Math.min(remaining, PAGE_SIZE)} sản phẩm
+                    <span className="load-more-sub">({remaining} sản phẩm còn lại)</span>
+                  </button>
+                </div>
+              )}
+
+              {!hasMore && list.length > PAGE_SIZE && (
+                <div className="load-more-wrap">
+                  <p className="all-loaded-text">
+                    <i className="fa fa-check-circle"></i> Đã hiển thị tất cả {list.length} sản phẩm
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
             <div className="empty-state">
               <i className="fa fa-search"></i>

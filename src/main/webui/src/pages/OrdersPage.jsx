@@ -1,14 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { fmt } from '../utils/utils';
+import { useAuth } from '../store/AuthContext';
+import { fetchApi } from '../api/apiClient';
 
 export default function OrdersPage() {
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const history = JSON.parse(localStorage.getItem('pz_orders') || '[]');
-    setOrders(history);
-  }, []);
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    
+    setLoading(true);
+    fetchApi('/orders')
+      .then(res => setOrders(res || []))
+      .catch(err => console.error("Lỗi lấy đơn hàng", err))
+      .finally(() => setLoading(false));
+  }, [token, navigate]);
+
+  if (!user) return null;
 
   return (
     <div className="profile-page">
@@ -22,10 +37,10 @@ export default function OrdersPage() {
         <div className="profile-layout">
           <div className="profile-sidebar">
             <div className="ps-user">
-              <div className="ps-avatar">NV</div>
+              <div className="ps-avatar">{(user.fullName || user.username).charAt(0).toUpperCase()}</div>
               <div className="ps-info">
-                <strong>Nguyễn Văn A</strong>
-                <span>Thành viên Bạc</span>
+                <strong>{user.fullName || user.username}</strong>
+                <span>Thành viên PhoneZone</span>
               </div>
             </div>
             <nav className="ps-nav">
@@ -39,7 +54,9 @@ export default function OrdersPage() {
           <div className="profile-content">
             <h2 className="pc-title">Đơn hàng của tôi</h2>
             
-            {orders.length === 0 ? (
+            {loading ? (
+               <div>Đang tải đơn hàng...</div>
+            ) : orders.length === 0 ? (
               <div className="empty-state">
                 <i className="fa fa-box-open"></i>
                 <h3>Bạn chưa có đơn hàng nào</h3>
@@ -51,28 +68,28 @@ export default function OrdersPage() {
                   <div key={order.id} className="order-card">
                     <div className="order-header">
                       <span className="order-id">Mã đơn: #{order.id}</span>
-                      <span className="order-date">{order.date}</span>
+                      <span className="order-date">{new Date(order.createdAt).toLocaleString('vi-VN')}</span>
                       <span className="order-status text-warning">{order.status}</span>
                     </div>
                     <div className="order-items">
-                      {order.items.map(item => (
-                        <div key={item.id} className="order-item">
-                          <img src={item.img} alt={item.name} />
+                      {order.items && order.items.map(item => (
+                        <div key={item.productId} className="order-item">
+                          <img src={item.productImage} alt={item.productName} />
                           <div className="oi-info">
-                            <div className="oi-name">{item.name}</div>
+                            <div className="oi-name">{item.productName}</div>
                             <div className="oi-qty">Số lượng: {item.quantity}</div>
                           </div>
-                          <div className="oi-price">{fmt(item.price)}</div>
+                          <div className="oi-price">{fmt(item.unitPrice)}</div>
                         </div>
                       ))}
                     </div>
                     <div className="order-footer">
                       <div className="order-total">
-                        Thành tiền: <strong>{fmt(order.total)}</strong>
+                        Thành tiền: <strong>{fmt(order.finalAmount)}</strong>
+                        {order.discountAmount > 0 && <span style={{fontSize: '0.85em', color: 'gray', display: 'block'}}>(Đã giảm {fmt(order.discountAmount)})</span>}
                       </div>
                       <div className="order-actions">
                         <button className="btn btn-outline btn-sm">Xem chi tiết</button>
-                        <button className="btn btn-primary btn-sm">Mua lại</button>
                       </div>
                     </div>
                   </div>

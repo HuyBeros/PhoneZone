@@ -19,13 +19,6 @@ export default function RewardsPage() {
   const unusedCoupons = coupons.filter(c => !c.used);
   const usedCoupons   = coupons.filter(c => c.used);
 
-  const handleSimulate = () => {
-    const val = parseInt(simAmount);
-    if (!val || val <= 0) return;
-    addPoints(val * 10000); // Nhập "số điểm" muốn thêm để test
-    setSimAmount('');
-  };
-
   return (
     <div className="rewards-page">
       {/* ── Hero ── */}
@@ -45,7 +38,7 @@ export default function RewardsPage() {
               <div className="rpc-label">Điểm hiện có</div>
               <div className="rpc-score">
                 <i className="fa fa-star"></i>
-                <span>{points.toLocaleString()}</span>
+                <span>{points ? points.toLocaleString() : '0'}</span>
               </div>
               <div className="rpc-sub">điểm thưởng</div>
               {nextTier && (
@@ -54,7 +47,7 @@ export default function RewardsPage() {
                     <div className="rpc-progress-fill" style={{ width: `${progress}%` }}></div>
                   </div>
                   <div className="rpc-progress-label">
-                    Cần thêm <strong>{(nextTier.points - points).toLocaleString()}</strong> điểm để đổi {nextTier.label}
+                    Cần thêm <strong>{(nextTier.points - (points || 0)).toLocaleString()}</strong> điểm để đổi {nextTier.label}
                   </div>
                 </div>
               )}
@@ -67,23 +60,6 @@ export default function RewardsPage() {
       </section>
 
       <div className="container">
-
-        {/* ── Demo: Thêm điểm test ── */}
-        <div className="rewards-demo-bar">
-          <i className="fa fa-flask"></i>
-          <span>Demo: Mô phỏng mua hàng để nhận điểm</span>
-          <input
-            type="number"
-            min="1"
-            placeholder="Nhập số điểm muốn thêm..."
-            value={simAmount}
-            onChange={e => setSimAmount(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSimulate()}
-          />
-          <button className="btn btn-primary" onClick={handleSimulate}>
-            <i className="fa fa-plus"></i> Thêm điểm
-          </button>
-        </div>
 
         {/* ── Đổi điểm lấy coupon ── */}
         <div className="rewards-section">
@@ -212,11 +188,13 @@ function WalletCouponCard({ coupon, used = false }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const cColor = coupon.color || '#3fb950';
+
   return (
     <div className={`wallet-coupon${used ? ' used' : ''}`}
-      style={{ '--c': used ? '#444' : coupon.color }}>
+      style={{ '--c': used ? '#444' : cColor }}>
       <div className="wc-left">
-        <div className="wc-icon" style={{ background: used ? '#333' : coupon.color }}>
+        <div className="wc-icon" style={{ background: used ? '#333' : cColor }}>
           {coupon.freeShip ? '👑' : '🎟️'}
         </div>
         <div>
@@ -224,7 +202,7 @@ function WalletCouponCard({ coupon, used = false }) {
           {coupon.freeShip && (
             <div className="wc-ship"><i className="fa fa-truck"></i> Miễn ship</div>
           )}
-          <div className="wc-date">Nhận ngày {coupon.earnedAt}</div>
+          <div className="wc-date">Nhận ngày {new Date(coupon.acquiredAt || new Date()).toLocaleDateString('vi-VN')}</div>
         </div>
       </div>
       <div className="wc-right">

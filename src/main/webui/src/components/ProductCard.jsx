@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../store/CartContext';
 import { useCompare } from '../store/CompareContext';
 import { fmt, discount } from '../utils/utils';
@@ -7,7 +7,7 @@ export default function ProductCard({ product: p }) {
   const { addToCart } = useCart();
   const { compareIds, toggleCompare } = useCompare();
   const navigate = useNavigate();
-  const disc = p.oldPrice ? discount(p.price, p.oldPrice) : '';
+  const disc = p.oldPrice && p.oldPrice > p.price ? discount(p.price, p.oldPrice) : '';
   const isCompared = compareIds.includes(p.id);
 
   return (
@@ -16,6 +16,7 @@ export default function ProductCard({ product: p }) {
         {p.isNew            && <span className="badge-tag badge-new">Mới</span>}
         {p.badge === 'sale' && <span className="badge-tag badge-sale">Sale</span>}
         {p.badge === 'hot'  && <span className="badge-tag badge-hot">Hot</span>}
+        {disc && <span className="badge-tag badge-discount">{disc}</span>}
       </div>
       <div className="product-img">
         <img src={p.img} alt={p.name} loading="lazy" />
@@ -31,11 +32,9 @@ export default function ProductCard({ product: p }) {
         </div>
         <div className="product-price">
           <span className="price-current">{fmt(p.price)}</span>
-          {p.oldPrice && <span className="price-old">{fmt(p.oldPrice)}</span>}
-          {disc       && <span className="price-discount">{disc}</span>}
-        </div>
-        <div className="product-installment">
-          Trả góp 0% từ <span>{fmt(Math.round(p.price / 12))}/tháng</span>
+          {p.oldPrice && p.oldPrice > p.price && (
+            <span className="price-old">{fmt(p.oldPrice)}</span>
+          )}
         </div>
         <div className="product-actions">
           <button

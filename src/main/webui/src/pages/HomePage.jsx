@@ -1,32 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { BRANDS, PHONES, ACCESSORIES } from '../data/data';
-import { fmt, discount } from '../utils/utils';
+import { BRANDS } from '../data/data';
+import { fmt, discount, mapProduct } from '../utils/utils';
 import ProductCard from '../components/ProductCard';
+import { fetchApi } from '../api/apiClient';
 
 /* ── Hero Slider ─────────────────────────────────────── */
 const SLIDES = [
   {
-    bg: 'linear-gradient(135deg,#dbeafe 0%,#eff6ff 50%,#e0f2fe 100%)',
-    tag: '📱 Ra mắt 2025', title: 'iPhone 16 Pro Max', sub: 'Titanium Design',
-    desc: 'Camera 48MP thế hệ mới, chip A18 Pro siêu mạnh, pin 29 giờ. Trải nghiệm iOS 18 đỉnh cao.',
-    price: '34.990.000đ', oldPrice: '37.990.000đ', badge: '-8%',
+    bgImage: '/quinoa/iphone17.png',
+    Image:'/quinoa/i1.png',
+    tag: '📱 Ra mắt 2025', title: 'iPhone 17 Pro', sub: 'Titanium Design · A19 Pro',
+    desc: 'Camera 48MP thế hệ mới với cảm biến lớn hơn, chip A19 Pro vượt trội, pin cả ngày. Trải nghiệm iOS 19 đỉnh cao.',
+    price: '34.999.000đ', oldPrice: '35.990.000đ', badge: '-8%',
     trust: ['Hàng chính hãng VNA', 'Trả góp 0%', 'Giao trong 2h'],
   },
   {
-    bg: 'linear-gradient(135deg,#e0f2fe 0%,#dbeafe 50%,#ede9fe 100%)',
-    tag: '🇰🇷 Samsung Flagship', title: 'Galaxy S25 Ultra', sub: 'AI Phone 2025',
-    desc: 'Bút S Pen tích hợp AI, camera 200MP, Snapdragon 8 Elite. Điện thoại Android mạnh nhất 2025.',
-    price: '29.990.000đ', oldPrice: '32.990.000đ', badge: '-9%',
-    trust: ['Chính hãng Samsung VN', 'Tặng ốp lưng', 'BH 12 tháng'],
+    bgImage: '/quinoa/mi17.png',
+    Image:'/quinoa/i2.png',
+    tag: '🇨🇳 Xiaomi Flagship 2025', title: 'Xiaomi 17 Pro Max', sub: 'Leica Summilux · HyperOS 2',
+    desc: 'Camera Leica Summilux 50MP zoom quang học 5x, sạc 120W siêu tốc, Snapdragon 8 Elite. Màn hình OLED 120Hz cong tràn viền.',
+    price: '22.650.000đ', oldPrice: '24.950.000đ', badge: '-11%',
+    trust: ['Chính hãng DGW', 'Tặng tai nghe Xiaomi', 'BH 18 tháng'],
   },
   {
-    bg: 'linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 50%,#dbeafe 100%)',
-    tag: '🇨🇳 Xiaomi 15 Ultra', title: 'Xiaomi 15 Ultra', sub: 'Leica Camera Pro',
-    desc: 'Camera Leica 50MP 5x optical zoom, sạc 90W siêu nhanh, màn hình OLED 120Hz cong.',
-    price: '23.990.000đ', oldPrice: '26.990.000đ', badge: '-11%',
-    trust: ['Chính hãng DGW', 'Tặng tai nghe', 'BH 18 tháng'],
-  },
+    bgImage: '/quinoa/vivo_x300_series_001.png',
+    Image:'/quinoa/i3.png',
+    tag: '🏆 vivo X-Series Pro', title: 'vivo X300 Pro', sub: 'ZEISS Telephoto · 200W Flash',
+    desc: 'Camera ZEISS 200MP telephoto chuyên nghiệp, sạc 200W nhanh nhất phân khúc, màn hình AMOLED 144Hz cực mượt.',
+    price: '19.995.000đ', oldPrice: '21.990.000đ', badge: '-10%',
+    trust: ['Chính hãng vivo VN', 'Tặng ốp lưng', 'BH 12 tháng'],
+  }
 ];
 
 function HeroSlider() {
@@ -43,7 +47,11 @@ function HeroSlider() {
     <section className="hero" id="home">
       <div className="hero-slider">
         {SLIDES.map((s, i) => (
-          <div key={i} className={`hero-slide${i === cur ? ' active' : ''}`} style={{ background: s.bg }}>
+          <div key={i} className={`hero-slide${i === cur ? ' active' : ''}`} style={{
+            backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.92) 45%, rgba(255,255,255,0.3) 100%), url(${s.bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}>
             <div className="container hero-content">
               <div className="hero-text">
                 <span className="hero-tag">{s.tag}</span>
@@ -66,9 +74,9 @@ function HeroSlider() {
               </div>
               <div className="hero-image">
                 <div className="hero-img-wrap">
-                  <img src="/quinoa/product_phone.png" alt={s.title} className="float-img" />
-                  {i === 0 && <div className="hero-badge-chip">🔒 Bảo mật Face ID</div>}
-                  {i === 0 && <div className="hero-badge-rating">⭐ 4.9 · 8,234 đánh giá</div>}
+                  <img src={s.Image} alt={s.title} className="float-img" />
+                  {i === 0 && <div className="hero-badge-chip"> Bảo mật Face ID</div>}
+                  {i === 0 && <div className="hero-badge-rating"> 4.9 · 8,234 đánh giá</div>}
                 </div>
               </div>
             </div>
@@ -86,67 +94,67 @@ function HeroSlider() {
   );
 }
 
+/* ── Featured Products Slider ────────────────────────── */
+function FeaturedSlider({ title, tag, products, linkTo, linkLabel }) {
+  // Responsive pageSize
+  const getPageSize = () => {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth <= 600) return 1;
+      if (window.innerWidth <= 900) return 2;
+    }
+    return 4;
+  };
+  const [pageSize, setPageSize] = useState(getPageSize());
+  const [page, setPage] = useState(0);
 
-/* ── Brands Section ──────────────────────────────────── */
-function BrandsSection({ activeBrand, onChange }) {
-  const list = activeBrand === 'all' ? PHONES : PHONES.filter(p => p.brand === activeBrand);
+  useEffect(() => {
+    const handleResize = () => {
+      setPageSize(getPageSize());
+      setPage(0); // reset về trang đầu khi đổi kích thước
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const totalPages = Math.ceil(products.length / pageSize);
+  const canPrev = page > 0;
+  const canNext = page < totalPages - 1;
+
+  const handlePrev = () => {
+    if (canPrev) setPage(page - 1);
+  };
+  const handleNext = () => {
+    if (canNext) setPage(page + 1);
+  };
+
+  const visibleProducts = products.slice(page * pageSize, page * pageSize + pageSize);
+
   return (
-    <section className="brands-section" id="phones">
+    <section className="featured-section">
       <div className="container">
         <div className="section-header">
           <div>
-            <span className="section-tag">Danh mục theo hãng</span>
-            <h2 className="section-title">Điện thoại <span className="highlight">Chính Hãng</span></h2>
+            <span className="section-tag">{tag}</span>
+            <h2 className="section-title">{title}</h2>
           </div>
-        </div>
-        <div className="brand-tabs">
-          <button className={`brand-tab${activeBrand === 'all' ? ' active' : ''}`} onClick={() => onChange('all')}>Tất cả</button>
-          {BRANDS.map(b => (
-            <button key={b.id} className={`brand-tab${activeBrand === b.id ? ' active' : ''}`} onClick={() => onChange(b.id)}>
-              {b.emoji} {b.name}
-            </button>
-          ))}
-        </div>
-        <div className="products-grid">
-          {list.map(p => <ProductCard key={p.id} product={p} />)}
-        </div>
-        <div className="load-more-wrap">
-          <Link to={`/brand/${activeBrand}`} className="btn btn-outline">
-            Xem tất cả {activeBrand !== 'all' ? BRANDS.find(b => b.id === activeBrand)?.name : ''} <i className="fa fa-chevron-right"></i>
+          <Link to={linkTo} className="btn btn-outline btn-sm">
+            {linkLabel} <i className="fa fa-chevron-right"></i>
           </Link>
         </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Accessory Section ───────────────────────────────── */
-function AccessorySection() {
-  const cats = [
-    { id: 'earbuds',    label: 'Tai nghe',            img: '/quinoa/product_earbuds.png' },
-    { id: 'speaker',    label: 'Loa Bluetooth',        img: '/quinoa/product_speaker.png' },
-    { id: 'watch',      label: 'Đồng hồ thông minh',  img: '/quinoa/product_smartwatch.png' },
-    { id: 'headphones', label: 'Tai nghe chụp tai',   img: '/quinoa/product_headphones.png' },
-  ];
-  return (
-    <section className="accessory-section" id="accessory">
-      <div className="container">
-        <div className="section-header">
-          <div>
-            <span className="section-tag">Phụ kiện điện thoại</span>
-            <h2 className="section-title">Phụ Kiện <span className="highlight">Chính Hãng</span></h2>
+        <div className="featured-slider-wrap">
+          <button className="featured-arrow featured-arrow-prev" onClick={handlePrev} disabled={!canPrev} style={{visibility: canPrev ? 'visible' : 'hidden'}}>
+            <i className="fa fa-chevron-left"></i>
+          </button>
+          <div className="featured-slider">
+            {visibleProducts.map(p => (
+              <div className="featured-slide-item" key={p.id}>
+                <ProductCard product={p} />
+              </div>
+            ))}
           </div>
-        </div>
-        <div className="accessory-cats">
-          {cats.map(c => (
-            <a key={c.id} href="#" className="acc-cat-card">
-              <img src={c.img} alt={c.label} />
-              <span>{c.label}</span>
-            </a>
-          ))}
-        </div>
-        <div className="products-grid">
-          {ACCESSORIES.map(p => <ProductCard key={p.id} product={p} />)}
+          <button className="featured-arrow featured-arrow-next" onClick={handleNext} disabled={!canNext} style={{visibility: canNext ? 'visible' : 'hidden'}}>
+            <i className="fa fa-chevron-right"></i>
+          </button>
         </div>
       </div>
     </section>
@@ -204,13 +212,62 @@ function Newsletter() {
 
 /* ── HomePage ────────────────────────────────────────── */
 export default function HomePage() {
-  const [activeBrand, setActiveBrand] = useState('all');
+  const [featuredPhones, setFeaturedPhones] = useState([]);
+  const [featuredTablets, setFeaturedTablets] = useState([]);
+
+  useEffect(() => {
+    // Điện thoại nổi bật: lấy 1 sản phẩm cao cấp nhất của từng hãng
+    fetchApi('/products?size=200&sort=price-desc')
+      .then(res => {
+        const data = res?.data || res || [];
+        const mapped = (Array.isArray(data) ? data : []).map(mapProduct);
+        
+        // Chỉ lấy điện thoại
+        const phones = mapped.filter(p => (p.brand || '').toLowerCase() !== 'máy tính bảng');
+        
+        // Lọc lấy 1 máy đắt nhất cho mỗi hãng
+        const seenBrands = new Set();
+        const topPerBrand = [];
+        
+        for (const p of phones) {
+          const brand = (p.brand || 'Khác').toLowerCase();
+          if (!seenBrands.has(brand)) {
+            seenBrands.add(brand);
+            topPerBrand.push(p);
+            if (topPerBrand.length === 8) break; // Lấy tối đa 8 hãng
+          }
+        }
+        
+        setFeaturedPhones(topPerBrand);
+      })
+      .catch(err => console.error(err));
+
+    // Máy tính bảng nổi bật: lấy 8 máy tính bảng giá cao nhất
+    fetchApi('/products?brand=Máy tính bảng&size=8&sort=price-desc')
+      .then(res => {
+        const data = res?.data || res || [];
+        setFeaturedTablets((Array.isArray(data) ? data : []).map(mapProduct).slice(0, 8));
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   return (
     <>
       <HeroSlider />
-      <BrandsSection activeBrand={activeBrand} onChange={setActiveBrand} />
-      <AccessorySection />
+      <FeaturedSlider
+        tag="Sản phẩm cao cấp"
+        title={<>Điện Thoại <span className="highlight">Nổi Bật</span></>}
+        products={featuredPhones}
+        linkTo="/brand/all"
+        linkLabel="Xem tất cả điện thoại"
+      />
+      <FeaturedSlider
+        tag="Máy tính bảng cao cấp"
+        title={<>Máy Tính Bảng <span className="highlight">Nổi Bật</span></>}
+        products={featuredTablets}
+        linkTo="/tablet"
+        linkLabel="Xem tất cả máy tính bảng"
+      />
       <WhySection />
       <Newsletter />
     </>

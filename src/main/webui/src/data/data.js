@@ -3,67 +3,78 @@ export const BRANDS = [
     "id": "iphone",
     "name": "iPhone",
     "emoji": "🍎",
-    "color": "#555"
+    "color": "#555",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg"
   },
   {
     "id": "samsung",
     "name": "Samsung",
     "emoji": "🔵",
-    "color": "#1428a0"
+    "color": "#1428a0",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Samsung_wordmark.svg/500px-Samsung_wordmark.svg.png"
   },
   {
     "id": "xiaomi",
     "name": "Xiaomi",
     "emoji": "🟠",
-    "color": "#ff6900"
+    "color": "#ff6900",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg"
   },
   {
     "id": "redmi",
     "name": "Redmi",
     "emoji": "🔴",
-    "color": "#e63946"
+    "color": "#e63946",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Xiaomi_Redmi_Logo.svg/500px-Xiaomi_Redmi_Logo.svg.png"
   },
   {
     "id": "oppo",
     "name": "OPPO",
     "emoji": "🟢",
-    "color": "#1d6339"
+    "color": "#1d6339",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/3840px-OPPO_LOGO_2019.svg.png"
   },
   {
     "id": "realme",
     "name": "Realme",
     "emoji": "🟡",
-    "color": "#f5a623"
+    "color": "#f5a623",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Realme_logo.png/500px-Realme_logo.png"
   },
   {
     "id": "vivo",
     "name": "Vivo",
     "emoji": "🔷",
-    "color": "#415fff"
+    "color": "#415fff",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Vivo_logo_2019.svg/500px-Vivo_logo_2019.svg.png"
   },
   {
     "id": "oneplus",
     "name": "OnePlus",
     "emoji": "🔴",
-    "color": "#eb0029"
+    "color": "#eb0029",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Logo_entreprise_OnePlus.png/960px-Logo_entreprise_OnePlus.png"
   },
   {
     "id": "honor",
     "name": "Honor",
     "emoji": "🩵",
-    "color": "#007aff"
+    "color": "#007aff",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Honor_Logo_%282020%29.svg/500px-Honor_Logo_%282020%29.svg.png"
   },
   {
     "id": "nubia",
     "name": "Nubia Red Magic",
     "emoji": "🎮",
-    "color": "#e63946"
+    "color": "#e63946",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Nubia_logo.svg/500px-Nubia_logo.svg.png"
   },
   {
     "id": "meizu",
     "name": "Meizu",
     "emoji": "⚫",
-    "color": "#333"
+    "color": "#333",
+    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Meizu.svg/500px-Meizu.svg.png"
   }
 ];
 
@@ -4612,7 +4623,7 @@ export const ACCESSORIES = [
     "oldPrice": 7990000,
     "rating": 4.8,
     "reviews": 4321,
-    "img": "/quinoa/product_earbuds.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2022/09/airpods-pro-2-trang.jpg.webp",
     "badge": "hot"
   },
   {
@@ -4624,7 +4635,7 @@ export const ACCESSORIES = [
     "oldPrice": 4990000,
     "rating": 4.7,
     "reviews": 2134,
-    "img": "/quinoa/product_earbuds.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2023/09/samsung-galaxy-buds-fe-trang.jpg.webp",
     "badge": "sale"
   },
   {
@@ -4636,7 +4647,7 @@ export const ACCESSORIES = [
     "oldPrice": 4290000,
     "rating": 4.6,
     "reviews": 3421,
-    "img": "/quinoa/product_speaker.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2022/09/loa-jbl-charge-5-xanh-la.jpg.webp",
     "badge": "sale"
   },
   {
@@ -4648,7 +4659,7 @@ export const ACCESSORIES = [
     "oldPrice": 13990000,
     "rating": 4.8,
     "reviews": 2345,
-    "img": "/quinoa/product_smartwatch.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2024/09/apple-watch-series-10-46mm-bac.jpg.webp",
     "badge": "hot"
   },
   {
@@ -4660,7 +4671,7 @@ export const ACCESSORIES = [
     "oldPrice": 9990000,
     "rating": 4.6,
     "reviews": 1234,
-    "img": "/quinoa/product_smartwatch.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2024/07/samsung-galaxy-watch-7-44mm-xanh.jpg.webp",
     "badge": "sale"
   },
   {
@@ -4672,7 +4683,7 @@ export const ACCESSORIES = [
     "oldPrice": 9990000,
     "rating": 4.9,
     "reviews": 5678,
-    "img": "/quinoa/product_headphones.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2023/09/sony-wh-1000xm5-den.jpg.webp",
     "badge": "hot"
   },
   {
@@ -4684,7 +4695,7 @@ export const ACCESSORIES = [
     "oldPrice": 5490000,
     "rating": 4.5,
     "reviews": 876,
-    "img": "/quinoa/product_headphones.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2022/09/tai-nghe-akg-n700nc-m2-den.jpg.webp",
     "badge": "sale"
   },
   {
@@ -4696,7 +4707,7 @@ export const ACCESSORIES = [
     "oldPrice": 2790000,
     "rating": 4.5,
     "reviews": 2876,
-    "img": "/quinoa/product_speaker.png",
+    "img": "https://cdn.mobilecity.vn/mobilecity-vn/images/2022/09/loa-jbl-flip-6-xanh-la.jpg.webp",
     "badge": "sale"
   }
 ];

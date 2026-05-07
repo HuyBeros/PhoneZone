@@ -1,65 +1,67 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useToast } from './ToastContext';
+import { useAuth } from './AuthContext';
+import { fetchApi } from '../api/apiClient';
 
+// For UI reference to show available tiers (can also be fetched from /api/rewards/coupons/available)
 export const COUPON_TIERS = [
-  { id: 'c100',  points: 100,  discount: 20000,  label: 'Giảm 20.000đ',              code: 'PZ20K',  freeShip: false, color: '#3fb950' },
-  { id: 'c250',  points: 250,  discount: 50000,  label: 'Giảm 50.000đ',              code: 'PZ50K',  freeShip: false, color: '#58a6ff' },
-  { id: 'c500',  points: 500,  discount: 100000, label: 'Giảm 100.000đ',             code: 'PZ100K', freeShip: false, color: '#f0a500' },
-  { id: 'c1000', points: 1000, discount: 200000, label: 'Giảm 200.000đ + Miễn ship', code: 'PZ200K', freeShip: true,  color: '#e63946' },
+  { id: 1, points: 100,  discount: 20000,  label: 'Giảm 20.000đ',              code: 'PZ20K',  freeShip: false, color: '#3fb950' },
+  { id: 2, points: 250,  discount: 50000,  label: 'Giảm 50.000đ',              code: 'PZ50K',  freeShip: false, color: '#58a6ff' },
+  { id: 3, points: 500,  discount: 100000, label: 'Giảm 100.000đ',             code: 'PZ100K', freeShip: false, color: '#f0a500' },
+  { id: 4, points: 1000, discount: 200000, label: 'Giảm 200.000đ + Miễn ship', code: 'PZ200K', freeShip: true,  color: '#e63946' },
 ];
 
 const PointsContext = createContext();
 
 export function PointsProvider({ children }) {
   const { showToast } = useToast();
+  const { token } = useAuth();
 
-  const [points, setPoints] = useState(() =>
-    parseInt(localStorage.getItem('pz_points') || '0')
-  );
-  const [coupons, setCoupons] = useState(() =>
-    JSON.parse(localStorage.getItem('pz_coupons') || '[]')
-  );
+  const [points, setPoints] = useState(0);
+  const [coupons, setCoupons] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
-  // Thêm điểm sau khi mua hàng (1 điểm / 10.000đ)
-  const addPoints = useCallback((orderTotal) => {
-    const earned = Math.floor(orderTotal / 10000);
-    if (earned <= 0) return;
-    setPoints(prev => {
-      const next = prev + earned;
-      localStorage.setItem('pz_points', String(next));
-      return next;
-    });
-    showToast(`⭐ Bạn nhận được ${earned} điểm thưởng!`);
-  }, [showToast]);
+  const fetchRewardsData = useCallback(async () => {
+    if (!token) {
+      setPoints(0);
+      setCoupons([]);
+      setAppliedCoupon(null);
+      return;
+    }
+    try {
+      const pData = await fetchApi('/rewards/points');
+      if (pData) setPoints(pData.points);
+
+      const cData = await fetchApi('/rewards/coupons/my');
+      if (cData) {
+        setCoupons(cData.map(c => ({
+          ...c,
+          label: c.description,
+          used: c.status === 'USED'
+        })));
+      }
+    } catch (e) {
+      console.error("Lỗi lấy điểm/coupon", e);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchRewardsData();
+  }, [fetchRewardsData]);
 
   // Đổi điểm lấy coupon
-  const redeemPoints = useCallback((tierId) => {
-    const tier = COUPON_TIERS.find(t => t.id === tierId);
-    if (!tier) return;
-    if (points < tier.points) {
-      showToast(`❌ Không đủ điểm! Cần ${tier.points} điểm.`);
+  const redeemPoints = useCallback(async (couponId) => {
+    if (!token) return false;
+    try {
+      await fetchApi(`/rewards/redeem/${couponId}`, { method: 'POST' });
+      showToast(`🎉 Đổi thành công mã giảm giá!`);
+      fetchRewardsData(); // reload points and coupons
+      return true;
+    } catch (e) {
+      showToast(`❌ ${e.message}`);
       return false;
     }
-    setPoints(prev => {
-      const next = prev - tier.points;
-      localStorage.setItem('pz_points', String(next));
-      return next;
-    });
-    const newCoupon = {
-      ...tier,
-      uid: `${tier.id}-${Date.now()}`,
-      used: false,
-      earnedAt: new Date().toLocaleDateString('vi-VN'),
-    };
-    setCoupons(prev => {
-      const next = [...prev, newCoupon];
-      localStorage.setItem('pz_coupons', JSON.stringify(next));
-      return next;
-    });
-    showToast(`🎉 Đổi thành công! Mã ${tier.code} đã thêm vào ví!`);
-    return true;
-  }, [points, showToast]);
+  }, [token, showToast, fetchRewardsData]);
 
   // Áp dụng coupon vào giỏ hàng
   const applyCoupon = useCallback((code) => {
@@ -70,7 +72,7 @@ export function PointsProvider({ children }) {
       return false;
     }
     setAppliedCoupon(coupon);
-    showToast(`✅ Áp dụng mã "${trimmed}" thành công! Giảm ${coupon.label}`);
+    showToast(`✅ Áp dụng mã "${trimmed}" thành công! Giảm ${coupon.discountAmount.toLocaleString()}đ`);
     return true;
   }, [coupons, showToast]);
 
@@ -80,19 +82,15 @@ export function PointsProvider({ children }) {
   }, [showToast]);
 
   // Đánh dấu coupon đã dùng sau khi thanh toán
-  const markCouponUsed = useCallback((code) => {
-    setCoupons(prev => {
-      const next = prev.map(c => c.code === code ? { ...c, used: true } : c);
-      localStorage.setItem('pz_coupons', JSON.stringify(next));
-      return next;
-    });
+  const markCouponUsed = useCallback(() => {
     setAppliedCoupon(null);
-  }, []);
+    fetchRewardsData(); // reload immediately
+  }, [fetchRewardsData]);
 
   return (
     <PointsContext.Provider value={{
       points, coupons, appliedCoupon,
-      addPoints, redeemPoints, applyCoupon, removeCoupon, markCouponUsed,
+      redeemPoints, applyCoupon, removeCoupon, markCouponUsed, fetchRewardsData
     }}>
       {children}
     </PointsContext.Provider>

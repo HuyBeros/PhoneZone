@@ -42,7 +42,7 @@ export default function Footer() {
             <li><a href="#">Hướng dẫn đặt hàng</a></li>
             <li><a href="#">Trả góp 0%</a></li>
             <li><a href="#">Tra cứu đơn hàng</a></li>
-            <li><a href="#">Liên hệ hỗ trợ</a></li>
+            <li><Link to="/contact">Liên hệ hỗ trợ</Link></li>
           </ul>
         </div>
         <div className="footer-col">

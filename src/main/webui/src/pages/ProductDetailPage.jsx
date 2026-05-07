@@ -1,19 +1,58 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { PHONES, ACCESSORIES } from '../data/data';
-import { fmt, discount } from '../utils/utils';
+import { fmt, discount, mapProduct } from '../utils/utils';
 import { useCart } from '../store/CartContext';
+import { fetchApi } from '../api/apiClient';
+
+// Danh sách các key thông số CƠ BẢN hiển thị mặc định
+const BASIC_SPEC_KEYS = [
+  'Màn hình rộng',
+  'Loại màn hình',
+  'Chuẩn màn hình',
+  'Hệ điều hành',
+  'Camera sau',
+  'Camera trước',
+  'Chipset',
+  'RAM',
+  'Bộ nhớ trong (ROM)',
+  'Loại Sim',
+  'Khe gắn Sim',
+  'Dung lượng pin',
+  'Kiểu dáng',
+];
+
+function formatSpecValue(value) {
+  if (Array.isArray(value)) {
+    return value.join('\n');
+  }
+  return value;
+}
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  
-  const product = PHONES.find(p => p.id === parseInt(id)) || ACCESSORIES.find(p => p.id === parseInt(id));
+
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showFullSpecs, setShowFullSpecs] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setLoading(true);
+    fetchApi(`/products/${id}`)
+      .then(res => setProduct(mapProduct(res)))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container" style={{ padding: '100px 0', textAlign: 'center' }}>
+        <h2>Đang tải thông tin sản phẩm...</h2>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -27,6 +66,11 @@ export default function ProductDetailPage() {
   }
 
   const disc = product.oldPrice ? discount(product.price, product.oldPrice) : '';
+
+  // Lọc thông số cơ bản (chỉ lấy key nằm trong BASIC_SPEC_KEYS và tồn tại trong product.specs)
+  const allEntries = product.specs ? Object.entries(product.specs) : [];
+  const basicEntries = allEntries.filter(([key]) => BASIC_SPEC_KEYS.includes(key));
+  const displayedEntries = showFullSpecs ? allEntries : basicEntries;
 
   return (
     <div className="product-detail-page">
@@ -100,21 +144,47 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Thông số kỹ thuật */}
-        {product.specs && Object.keys(product.specs).length > 0 && (
-          <div className="pd-specs">
-            <div className="pd-section-title">Thông số kỹ thuật</div>
-            <table className="specs-table">
-              <tbody>
-                {Object.entries(product.specs).map(([key, value]) => (
-                  <tr key={key}>
-                    <td className="spec-name">{key}</td>
-                    <td className="spec-value">{value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className="pd-specs">
+          <div className="pd-section-title">Thông số kỹ thuật</div>
+          <table className="specs-table">
+            <tbody>
+              {displayedEntries.map(([key, value]) => (
+                <tr key={key}>
+                  <td className="spec-name">{key}</td>
+                  <td className="spec-value" style={{ whiteSpace: 'pre-line' }}>
+                    {formatSpecValue(value)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Nút toggle xem thêm / thu gọn */}
+          {allEntries.length > basicEntries.length && (
+            <button
+              className={`specs-toggle-btn${showFullSpecs ? ' expanded' : ''}`}
+              onClick={() => setShowFullSpecs(prev => !prev)}
+            >
+              {showFullSpecs ? (
+                <>
+                  <i className="fa fa-chevron-up"></i>
+                  Thu gọn thông số
+                  <span style={{ fontSize: '0.78rem', fontWeight: 400, opacity: 0.75 }}>
+                    ({allEntries.length - basicEntries.length} thông số ẩn đi)
+                  </span>
+                </>
+              ) : (
+                <>
+                  <i className="fa fa-chevron-down"></i>
+                  Xem thêm cấu hình chi tiết
+                  <span style={{ fontSize: '0.78rem', fontWeight: 400, opacity: 0.75 }}>
+                    (+{allEntries.length - basicEntries.length} thông số)
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

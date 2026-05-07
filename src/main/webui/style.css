@@ -78,7 +78,7 @@ img{max-width:100%;display:block}
 .nav-dd-all:hover{border-color:var(--primary);color:var(--primary)}
 
 .nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.search-box{display:flex;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:7px 14px;gap:8px;transition:.2s}
+.search-box{display:flex;align-items-center;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:7px 14px;gap:8px;transition:.2s}
 .search-box:focus-within{border-color:var(--primary)}
 .search-box input{background:none;border:none;outline:none;color:var(--text);font-size:.875rem;width:200px}
 .search-box button{background:none;border:none;color:var(--text2);cursor:pointer;transition:.2s}
@@ -310,4 +310,16 @@ img{max-width:100%;display:block}
   .newsletter-form{flex-direction:column}
   .footer-grid{grid-template-columns:1fr}
   .products-grid{grid-template-columns:1fr 1fr}
+}
+
+/* Brand color dot cho menu con hãng điện thoại */
+.nav-dd-item .dd-dot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  border: 2px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
 }
