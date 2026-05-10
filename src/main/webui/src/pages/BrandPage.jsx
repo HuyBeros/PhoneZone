@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { BRANDS } from '../data/data';
 import { mapProduct } from '../utils/utils';
 import ProductCard from '../components/ProductCard';
@@ -9,20 +9,25 @@ const PAGE_SIZE = 15;
 
 export default function BrandPage() {
   const { brandId } = useParams();
+  const [searchParams] = useSearchParams();
   const [sort, setSort] = useState('default');
   const [priceFilter, setPriceFilter] = useState('all');
   const [current, setCurrent] = useState(brandId || 'all');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  
+  const [searchKeyword, setSearchKeyword] = useState(() => searchParams.get('q') || '');
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Sync khi URL thay đổi
   useEffect(() => {
     setCurrent(brandId || 'all');
-    setVisibleCount(PAGE_SIZE); // reset về 15 khi đổi hãng
+    setVisibleCount(PAGE_SIZE);
+    // Đọc query param ?q= mỗi khi URL thay đổi
+    const q = searchParams.get('q') || '';
+    setSearchKeyword(q);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [brandId]);
+  }, [brandId, searchParams]);
 
   // Fetch products when current brand changes
   useEffect(() => {
@@ -51,13 +56,20 @@ export default function BrandPage() {
 
   const list = useMemo(() => {
     let list = [...products];
-    
-    // Apply price filter
+
+    // Lọc theo từ khóa tìm kiếm (từ banner hoặc search input)
+    if (searchKeyword.trim()) {
+      const kw = searchKeyword.trim().toLowerCase();
+      list = list.filter(p =>
+        (p.name && p.name.toLowerCase().includes(kw)) ||
+        (p.brand && p.brand.toLowerCase().includes(kw))
+      );
+    }
+
     if (priceFilter === 'under10') list = list.filter(p => p.price < 10000000);
     else if (priceFilter === '10to20') list = list.filter(p => p.price >= 10000000 && p.price <= 20000000);
     else if (priceFilter === 'over20') list = list.filter(p => p.price > 20000000);
 
-    // Apply sort
     switch (sort) {
       case 'price-asc':  return list.sort((a, b) => a.price - b.price);
       case 'price-desc': return list.sort((a, b) => b.price - a.price);
@@ -65,7 +77,7 @@ export default function BrandPage() {
       case 'reviews':    return list.sort((a, b) => b.reviews - a.reviews);
       default:           return list;
     }
-  }, [products, priceFilter, sort]);
+  }, [products, priceFilter, sort, searchKeyword]);
 
   const visibleList = list.slice(0, visibleCount);
   const hasMore = visibleCount < list.length;
@@ -77,18 +89,35 @@ export default function BrandPage() {
       <section className="brand-page-hero">
         <div className="container">
           <div className="brand-hero-inner">
-            {brandObj && brandObj.logo ? (
-              <img src={brandObj.logo} alt={brandObj.name} className="brand-hero-logo" />
-            ) : (
-              <div className="brand-hero-emoji">{brandObj ? brandObj.emoji : '📱'}</div>
-            )}
+            {/* Icon / Logo */}
+            <div className="brand-hero-icon-wrap">
+              {brandObj && brandObj.logo ? (
+                <img src={brandObj.logo} alt={brandObj.name} className="brand-hero-logo" />
+              ) : (
+                <i className="fas fa-mobile-screen-button"></i>
+              )}
+            </div>
+
             <div className="brand-hero-text">
               <h1>Điện thoại {brandObj ? brandObj.name : 'Tất cả hãng'}</h1>
               <p>Khám phá {list.length} mẫu {brandObj ? brandObj.name : ''} chính hãng mới nhất</p>
+              <div className="brand-hero-tags">
+                <span className="brand-hero-tag">
+                  <i className="fas fa-shield-halved"></i> Chính hãng 100%
+                </span>
+                <span className="brand-hero-tag">
+                  <i className="fas fa-truck-fast"></i> Giao hàng nhanh
+                </span>
+                <span className="brand-hero-tag">
+                  <i className="fas fa-rotate-left"></i> Đổi trả 30 ngày
+                </span>
+              </div>
             </div>
+
             <div className="brand-hero-count">
+              <div className="brand-hero-count-label">Sản phẩm</div>
               <strong>{list.length}</strong>
-              <span>sản phẩm</span>
+              <span>đang có hàng</span>
             </div>
           </div>
         </div>
@@ -99,12 +128,12 @@ export default function BrandPage() {
 
           {/* ── Breadcrumb ── */}
           <div className="breadcrumb">
-            <Link to="/"><i className="fa fa-home"></i> Trang chủ</Link>
-            <span className="sep"><i className="fa fa-chevron-right"></i></span>
+            <Link to="/"><i className="fas fa-house"></i> Trang chủ</Link>
+            <span className="sep"><i className="fas fa-chevron-right"></i></span>
             <Link to="/brand/all">Điện thoại</Link>
             {brandObj && (
               <>
-                <span className="sep"><i className="fa fa-chevron-right"></i></span>
+                <span className="sep"><i className="fas fa-chevron-right"></i></span>
                 <span>{brandObj.name}</span>
               </>
             )}
@@ -116,7 +145,7 @@ export default function BrandPage() {
               to="/brand/all"
               className={`brand-switch-btn${current === 'all' ? ' active' : ''}`}
             >
-              <span className="sw-emoji">📱</span>
+              <i className="fas fa-mobile-screen-button sw-emoji" style={{fontSize:'1.4rem'}}></i>
               <span className="sw-name">Tất cả</span>
             </Link>
             {BRANDS.map(b => (
@@ -137,8 +166,31 @@ export default function BrandPage() {
 
           {/* ── Filters ── */}
           <div className="filters-bar">
+            {/* Search box */}
+            <div className="filter-group" style={{flex: 1, minWidth: '200px'}}>
+              <span className="filter-label"><i className="fas fa-search"></i> Tìm:</span>
+              <div style={{position: 'relative', flex: 1}}>
+                <input
+                  type="text"
+                  placeholder="Tìm sản phẩm..."
+                  value={searchKeyword}
+                  onChange={e => { setSearchKeyword(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                  className="sort-select"
+                  style={{paddingRight: searchKeyword ? '32px' : undefined, width: '100%'}}
+                />
+                {searchKeyword && (
+                  <button
+                    onClick={() => setSearchKeyword('')}
+                    style={{position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '0.85rem', padding: '2px 4px'}}
+                    title="Xóa tìm kiếm"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="filter-group">
-              <span className="filter-label">Mức giá:</span>
+              <span className="filter-label"><i className="fas fa-tag"></i> Mức giá:</span>
               <select className="sort-select" value={priceFilter} onChange={e => setPriceFilter(e.target.value)}>
                 <option value="all">Tất cả các mức giá</option>
                 <option value="under10">Dưới 10 triệu</option>
@@ -147,7 +199,7 @@ export default function BrandPage() {
               </select>
             </div>
             <div className="filter-group">
-              <span className="filter-label">Sắp xếp:</span>
+              <span className="filter-label"><i className="fas fa-arrow-up-wide-short"></i> Sắp xếp:</span>
               <select className="sort-select" value={sort} onChange={e => setSort(e.target.value)}>
                 <option value="default">Mặc định</option>
                 <option value="price-asc">Giá tăng dần</option>
@@ -158,13 +210,14 @@ export default function BrandPage() {
             </div>
             <span className="result-count">
               Hiển thị <strong>{visibleList.length}</strong> / <strong>{list.length}</strong> sản phẩm
+              {searchKeyword && <span style={{marginLeft: '6px', color: 'var(--primary)', fontSize: '0.8rem'}}>cho "{searchKeyword}"</span>}
             </span>
           </div>
 
           {/* ── Product Grid ── */}
           {loading ? (
             <div className="empty-state">
-              <i className="fa fa-spinner fa-spin"></i>
+              <i className="fas fa-spinner fa-spin"></i>
               <h3>Đang tải sản phẩm...</h3>
             </div>
           ) : list.length > 0 ? (
@@ -180,7 +233,7 @@ export default function BrandPage() {
                     className="btn-load-more"
                     onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
                   >
-                    <i className="fa fa-chevron-down"></i>
+                    <i className="fas fa-chevron-down"></i>
                     Xem thêm {Math.min(remaining, PAGE_SIZE)} sản phẩm
                     <span className="load-more-sub">({remaining} sản phẩm còn lại)</span>
                   </button>
@@ -190,14 +243,14 @@ export default function BrandPage() {
               {!hasMore && list.length > PAGE_SIZE && (
                 <div className="load-more-wrap">
                   <p className="all-loaded-text">
-                    <i className="fa fa-check-circle"></i> Đã hiển thị tất cả {list.length} sản phẩm
+                    <i className="fas fa-circle-check"></i> Đã hiển thị tất cả {list.length} sản phẩm
                   </p>
                 </div>
               )}
             </>
           ) : (
             <div className="empty-state">
-              <i className="fa fa-search"></i>
+              <i className="fas fa-magnifying-glass"></i>
               <h3>Không tìm thấy sản phẩm</h3>
               <p>Hãng này chưa có sản phẩm hoặc đang được cập nhật.</p>
             </div>

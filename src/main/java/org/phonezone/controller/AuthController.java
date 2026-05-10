@@ -67,4 +67,6 @@ public class AuthController {
                 "user", UserResponse.from(user)
         )).build();
     }
+
+
 }

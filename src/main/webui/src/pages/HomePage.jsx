@@ -4,6 +4,7 @@ import { BRANDS } from '../data/data';
 import { fmt, discount, mapProduct } from '../utils/utils';
 import ProductCard from '../components/ProductCard';
 import { fetchApi } from '../api/apiClient';
+import { useToast } from '../store/ToastContext';
 
 /* ── Hero Slider ─────────────────────────────────────── */
 const SLIDES = [
@@ -14,6 +15,9 @@ const SLIDES = [
     desc: 'Camera 48MP thế hệ mới với cảm biến lớn hơn, chip A19 Pro vượt trội, pin cả ngày. Trải nghiệm iOS 19 đỉnh cao.',
     price: '34.999.000đ', oldPrice: '35.990.000đ', badge: '-8%',
     trust: ['Hàng chính hãng VNA', 'Trả góp 0%', 'Giao trong 2h'],
+    buyLink: '/brand/all?q=iPhone+17+Pro',
+    detailLink: '/brand/all?q=iPhone+17+Pro',
+    searchKeyword: 'iPhone 17 Pro',
   },
   {
     bgImage: '/quinoa/mi17.png',
@@ -22,6 +26,9 @@ const SLIDES = [
     desc: 'Camera Leica Summilux 50MP zoom quang học 5x, sạc 120W siêu tốc, Snapdragon 8 Elite. Màn hình OLED 120Hz cong tràn viền.',
     price: '22.650.000đ', oldPrice: '24.950.000đ', badge: '-11%',
     trust: ['Chính hãng DGW', 'Tặng tai nghe Xiaomi', 'BH 18 tháng'],
+    buyLink: '/brand/all?q=Xiaomi+17+Pro+Max',
+    detailLink: '/brand/all?q=Xiaomi+17+Pro+Max',
+    searchKeyword: 'Xiaomi 17 Pro Max',
   },
   {
     bgImage: '/quinoa/vivo_x300_series_001.png',
@@ -30,6 +37,9 @@ const SLIDES = [
     desc: 'Camera ZEISS 200MP telephoto chuyên nghiệp, sạc 200W nhanh nhất phân khúc, màn hình AMOLED 144Hz cực mượt.',
     price: '19.995.000đ', oldPrice: '21.990.000đ', badge: '-10%',
     trust: ['Chính hãng vivo VN', 'Tặng ốp lưng', 'BH 12 tháng'],
+    buyLink: '/brand/all?q=vivo+X300+Pro',
+    detailLink: '/brand/all?q=vivo+X300+Pro',
+    searchKeyword: 'vivo X300 Pro',
   }
 ];
 
@@ -63,12 +73,12 @@ function HeroSlider() {
                   <span className="hero-discount">{s.badge}</span>
                 </div>
                 <div className="hero-btns">
-                  <Link to="/brand/all" className="btn btn-primary">Mua Ngay <i className="fa fa-arrow-right"></i></Link>
-                  <Link to="/brand/all" className="btn btn-outline">Xem cấu hình</Link>
+                  <Link to={`/brand/all?q=${encodeURIComponent(s.searchKeyword)}`} className="btn btn-primary">Mua Ngay <i className="fas fa-arrow-right"></i></Link>
+                  <Link to={`/brand/all?q=${encodeURIComponent(s.searchKeyword)}`} className="btn btn-outline">Xem cấu hình</Link>
                 </div>
                 <div className="hero-trust">
                   {s.trust.map(t => (
-                    <span key={t}><i className="fa fa-check-circle"></i> {t}</span>
+                    <span key={t}><i className="fas fa-circle-check"></i> {t}</span>
                   ))}
                 </div>
               </div>
@@ -83,8 +93,8 @@ function HeroSlider() {
           </div>
         ))}
       </div>
-      <button className="slider-arrow prev" onClick={() => go(cur - 1)}><i className="fa fa-chevron-left"></i></button>
-      <button className="slider-arrow next" onClick={() => go(cur + 1)}><i className="fa fa-chevron-right"></i></button>
+      <button className="slider-arrow prev" onClick={() => go(cur - 1)}><i className="fas fa-chevron-left"></i></button>
+      <button className="slider-arrow next" onClick={() => go(cur + 1)}><i className="fas fa-chevron-right"></i></button>
       <div className="slider-dots">
         {SLIDES.map((_, i) => (
           <button key={i} className={`dot${i === cur ? ' active' : ''}`} onClick={() => setCur(i)} />
@@ -96,38 +106,33 @@ function HeroSlider() {
 
 /* ── Featured Products Slider ────────────────────────── */
 function FeaturedSlider({ title, tag, products, linkTo, linkLabel }) {
-  // Responsive pageSize
-  const getPageSize = () => {
-    if (typeof window !== 'undefined') {
-      if (window.innerWidth <= 600) return 1;
-      if (window.innerWidth <= 900) return 2;
-    }
-    return 4;
+  const scrollRef = useRef(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
   };
-  const [pageSize, setPageSize] = useState(getPageSize());
-  const [page, setPage] = useState(0);
 
   useEffect(() => {
-    const handleResize = () => {
-      setPageSize(getPageSize());
-      setPage(0); // reset về trang đầu khi đổi kích thước
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    const timer = setTimeout(checkScroll, 100);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      clearTimeout(timer);
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [products]);
 
-  const totalPages = Math.ceil(products.length / pageSize);
-  const canPrev = page > 0;
-  const canNext = page < totalPages - 1;
-
-  const handlePrev = () => {
-    if (canPrev) setPage(page - 1);
+  const scroll = (dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth, behavior: 'smooth' });
   };
-  const handleNext = () => {
-    if (canNext) setPage(page + 1);
-  };
-
-  const visibleProducts = products.slice(page * pageSize, page * pageSize + pageSize);
 
   return (
     <section className="featured-section">
@@ -138,23 +143,28 @@ function FeaturedSlider({ title, tag, products, linkTo, linkLabel }) {
             <h2 className="section-title">{title}</h2>
           </div>
           <Link to={linkTo} className="btn btn-outline btn-sm">
-            {linkLabel} <i className="fa fa-chevron-right"></i>
+            {linkLabel} <i className="fas fa-chevron-right"></i>
           </Link>
         </div>
+
         <div className="featured-slider-wrap">
-          <button className="featured-arrow featured-arrow-prev" onClick={handlePrev} disabled={!canPrev} style={{visibility: canPrev ? 'visible' : 'hidden'}}>
-            <i className="fa fa-chevron-left"></i>
-          </button>
-          <div className="featured-slider">
-            {visibleProducts.map(p => (
+          {canPrev && (
+            <button className="featured-arrow featured-arrow-prev" onClick={() => scroll(-1)}>
+              <i className="fas fa-chevron-left"></i>
+            </button>
+          )}
+          <div className="featured-slider" ref={scrollRef}>
+            {products.map(p => (
               <div className="featured-slide-item" key={p.id}>
                 <ProductCard product={p} />
               </div>
             ))}
           </div>
-          <button className="featured-arrow featured-arrow-next" onClick={handleNext} disabled={!canNext} style={{visibility: canNext ? 'visible' : 'hidden'}}>
-            <i className="fa fa-chevron-right"></i>
-          </button>
+          {canNext && (
+            <button className="featured-arrow featured-arrow-next" onClick={() => scroll(1)}>
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          )}
         </div>
       </div>
     </section>
@@ -165,9 +175,9 @@ function FeaturedSlider({ title, tag, products, linkTo, linkLabel }) {
 function WhySection() {
   const items = [
     { icon: 'fa-certificate', title: '100% Chính Hãng', desc: 'Tất cả sản phẩm nhập khẩu chính hãng, có hóa đơn VAT, tem bảo hành hãng.' },
-    { icon: 'fa-shipping-fast', title: 'Giao Hàng 2 Giờ', desc: 'Giao nhanh trong 2 giờ nội thành Hà Nội & TP.HCM. Miễn phí từ 300K.' },
+    { icon: 'fa-truck-fast', title: 'Giao Hàng 2 Giờ', desc: 'Giao nhanh trong 2 giờ nội thành Hà Nội & TP.HCM. Miễn phí từ 300K.' },
     { icon: 'fa-credit-card', title: 'Trả Góp 0%', desc: 'Hỗ trợ trả góp 0% lãi suất qua thẻ tín dụng và dịch vụ MPOS.' },
-    { icon: 'fa-undo-alt', title: 'Đổi Trả 30 Ngày', desc: 'Không hài lòng? Đổi trả trong 30 ngày, hoàn tiền trong 24 giờ.' },
+    { icon: 'fa-rotate-left', title: 'Đổi Trả 30 Ngày', desc: 'Không hài lòng? Đổi trả trong 30 ngày, hoàn tiền trong 24 giờ.' },
   ];
   return (
     <section className="why-section">
@@ -175,7 +185,7 @@ function WhySection() {
         <div className="why-grid">
           {items.map(it => (
             <div key={it.title} className="why-card">
-              <div className="why-icon"><i className={`fa ${it.icon}`}></i></div>
+              <div className="why-icon"><i className={`fas ${it.icon}`}></i></div>
               <h3>{it.title}</h3>
               <p>{it.desc}</p>
             </div>
@@ -189,9 +199,10 @@ function WhySection() {
 /* ── Newsletter ──────────────────────────────────────── */
 function Newsletter() {
   const [email, setEmail] = useState('');
+  const { showToast } = useToast();
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('🎉 Đăng ký thành công! Mã 500K đã gửi về email.');
+    showToast('Đăng ký thành công! Mã 500K đã gửi về email.', 'success');
     setEmail('');
   };
   return (
@@ -203,7 +214,7 @@ function Newsletter() {
         </div>
         <form className="newsletter-form" onSubmit={handleSubmit}>
           <input type="email" placeholder="Nhập email của bạn..." required value={email} onChange={e => setEmail(e.target.value)} />
-          <button type="submit" className="btn btn-primary">Đăng Ký <i className="fa fa-paper-plane"></i></button>
+          <button type="submit" className="btn btn-primary">Đăng Ký <i className="fas fa-paper-plane"></i></button>
         </form>
       </div>
     </section>

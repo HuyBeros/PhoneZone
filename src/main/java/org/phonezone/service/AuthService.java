@@ -44,6 +44,7 @@ public class AuthService {
         return user;
     }
 
+
     /**
      * Đăng nhập – kiểm tra username + password, trả về JWT token.
      * @return JWT token string, hoặc null nếu sai thông tin.

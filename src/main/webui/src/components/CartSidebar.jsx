@@ -35,16 +35,16 @@ export default function CartSidebar() {
       />
       <aside className={`cart-sidebar${cartOpen ? ' active' : ''}`}>
         <div className="cart-header">
-          <h3><i className="fa fa-shopping-cart"></i> Giỏ hàng ({cartCount})</h3>
+          <h3><i className="fas fa-cart-shopping"></i> Giỏ hàng ({cartCount})</h3>
           <button className="close-cart" onClick={closeCart}>
-            <i className="fa fa-times"></i>
+            <i className="fas fa-xmark"></i>
           </button>
         </div>
 
         <div className="cart-items">
           {cart.length === 0 ? (
             <div className="cart-empty">
-              <i className="fa fa-shopping-cart"></i>
+              <i className="fas fa-cart-shopping"></i>
               <p>Giỏ hàng đang trống</p>
             </div>
           ) : (
@@ -56,7 +56,7 @@ export default function CartSidebar() {
                   <div className="cart-item-price">{fmt(item.price)} × {item.qty}</div>
                 </div>
                 <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>
-                  <i className="fa fa-trash"></i>
+                  <i className="fas fa-trash-can"></i>
                 </button>
               </div>
             ))
@@ -82,21 +82,21 @@ export default function CartSidebar() {
                     </button>
                   </div>
                   <div className="coupon-hint">
-                    <i className="fa fa-star"></i>
+                    <i className="fas fa-star"></i>
                     <a href="#/rewards">Xem ví coupon của tôi</a>
                   </div>
                 </div>
               ) : (
                 <div className="applied-coupon">
                   <div className="applied-coupon-left">
-                    <i className="fa fa-tag"></i>
+                    <i className="fas fa-tag"></i>
                     <div>
                       <div className="applied-coupon-code">{appliedCoupon.code}</div>
                       <div className="applied-coupon-label">{appliedCoupon.label}</div>
                     </div>
                   </div>
                   <button className="remove-coupon" onClick={removeCoupon}>
-                    <i className="fa fa-times"></i>
+                    <i className="fas fa-xmark"></i>
                   </button>
                 </div>
               )}
@@ -111,13 +111,13 @@ export default function CartSidebar() {
             </div>
             {discount > 0 && (
               <div className="cart-total-row discount-row">
-                <span><i className="fa fa-tag"></i> Giảm giá:</span>
+                <span><i className="fas fa-tag"></i> Giảm giá:</span>
                 <span>-{fmt(discount)}</span>
               </div>
             )}
             {appliedCoupon?.freeShip && (
               <div className="cart-total-row discount-row">
-                <span><i className="fa fa-truck"></i> Phí ship:</span>
+                <span><i className="fas fa-truck"></i> Phí ship:</span>
                 <span>Miễn phí</span>
               </div>
             )}
@@ -127,7 +127,7 @@ export default function CartSidebar() {
             </div>
             {cart.length > 0 && (
               <div className="cart-points-earn">
-                <i className="fa fa-star"></i>
+                <i className="fas fa-star"></i>
                 Đặt hàng này nhận <strong>{pointsEarn} điểm</strong> thưởng
               </div>
             )}
@@ -138,10 +138,10 @@ export default function CartSidebar() {
             onClick={handleCheckout}
             disabled={cart.length === 0}
           >
-            Thanh Toán <i className="fa fa-arrow-right"></i>
+            Thanh Toán <i className="fas fa-arrow-right"></i>
           </button>
           <p className="cart-note">
-            <i className="fa fa-lock"></i> Thanh toán bảo mật SSL 256-bit
+            <i className="fas fa-lock"></i> Thanh toán bảo mật SSL 256-bit
           </p>
         </div>
       </aside>

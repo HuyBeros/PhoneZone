@@ -76,10 +76,10 @@ export default function ProductDetailPage() {
     <div className="product-detail-page">
       <div className="container">
         <div className="breadcrumb">
-          <Link to="/"><i className="fa fa-home"></i> Trang chủ</Link>
-          <span className="sep"><i className="fa fa-chevron-right"></i></span>
+          <Link to="/"><i className="fas fa-house"></i> Trang chủ</Link>
+          <span className="sep"><i className="fas fa-chevron-right"></i></span>
           <Link to={`/brand/${product.brand || 'all'}`}>{product.brand || 'Phụ kiện'}</Link>
-          <span className="sep"><i className="fa fa-chevron-right"></i></span>
+          <span className="sep"><i className="fas fa-chevron-right"></i></span>
           <span>{product.name}</span>
         </div>
 
@@ -116,7 +116,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="pd-promotions">
-              <div className="pd-promo-title"><i className="fa fa-gift"></i> Khuyến mãi & Ưu đãi</div>
+              <div className="pd-promo-title"><i className="fas fa-gift"></i> Khuyến mãi & Ưu đãi</div>
               <ul>
                 <li>Giảm thêm tới 500.000đ khi thanh toán qua VNPay.</li>
                 <li>Tặng ốp lưng chính hãng & miếng dán màn hình.</li>
@@ -132,7 +132,7 @@ export default function ProductDetailPage() {
               </button>
               <div className="pd-btn-group">
                 <button className="btn-add-cart" onClick={() => addToCart(product.id)}>
-                  <i className="fa fa-cart-plus"></i> Thêm vào giỏ
+                  <i className="fas fa-cart-plus"></i> Thêm vào giỏ
                 </button>
                 <button className="btn-add-cart btn-installment">
                   <strong>MUA TRẢ GÓP 0%</strong>
@@ -167,7 +167,7 @@ export default function ProductDetailPage() {
             >
               {showFullSpecs ? (
                 <>
-                  <i className="fa fa-chevron-up"></i>
+                  <i className="fas fa-chevron-up"></i>
                   Thu gọn thông số
                   <span style={{ fontSize: '0.78rem', fontWeight: 400, opacity: 0.75 }}>
                     ({allEntries.length - basicEntries.length} thông số ẩn đi)
@@ -175,7 +175,7 @@ export default function ProductDetailPage() {
                 </>
               ) : (
                 <>
-                  <i className="fa fa-chevron-down"></i>
+                  <i className="fas fa-chevron-down"></i>
                   Xem thêm cấu hình chi tiết
                   <span style={{ fontSize: '0.78rem', fontWeight: 400, opacity: 0.75 }}>
                     (+{allEntries.length - basicEntries.length} thông số)

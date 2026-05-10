@@ -28,6 +28,13 @@ export async function fetchApi(endpoint, options = {}) {
 
         const data = await response.json().catch(() => null);
 
+        if (response.status === 401) {
+            localStorage.removeItem('pz_token');
+            localStorage.removeItem('pz_user');
+            window.location.href = '/?login=true';
+            throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        }
+
         if (!response.ok) {
             throw new Error((data && data.error) || data?.message || 'Có lỗi xảy ra khi gọi API');
         }

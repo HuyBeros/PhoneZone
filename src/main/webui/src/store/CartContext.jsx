@@ -43,7 +43,7 @@ export function CartProvider({ children }) {
 
   const addToCart = useCallback(async (productId, qty = 1) => {
     if (!token) {
-      alert("Vui lòng đăng nhập để thêm vào giỏ hàng");
+      showToast('Vui lòng đăng nhập để thêm vào giỏ hàng', 'warning');
       return;
     }
     try {
@@ -51,10 +51,10 @@ export function CartProvider({ children }) {
         method: 'POST',
         body: JSON.stringify({ productId, quantity: qty })
       });
-      showToast('🛒 Đã thêm sản phẩm vào giỏ hàng!');
+      showToast('Đã thêm sản phẩm vào giỏ hàng!', 'success');
       fetchCart(); // reload giỏ hàng
     } catch (e) {
-      alert(e.message || "Lỗi thêm giỏ hàng");
+      showToast(e.message || 'Lỗi thêm giỏ hàng', 'error');
     }
   }, [token, showToast, fetchCart]);
 
@@ -68,7 +68,7 @@ export function CartProvider({ children }) {
       await fetchApi(`/cart/${item.cartItemId}`, { method: 'DELETE' });
       fetchCart();
     } catch (e) {
-      alert(e.message || "Lỗi xóa sản phẩm khỏi giỏ hàng");
+      showToast(e.message || 'Lỗi xóa sản phẩm khỏi giỏ hàng', 'error');
     }
   }, [token, cart, fetchCart]);
 

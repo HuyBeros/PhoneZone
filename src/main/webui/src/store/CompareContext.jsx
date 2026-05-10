@@ -1,16 +1,18 @@
 import { createContext, useContext, useState } from 'react';
 import { PHONES } from '../data/data';
+import { useToast } from './ToastContext';
 
 const CompareContext = createContext();
 
 export function CompareProvider({ children }) {
   const [compareIds, setCompareIds] = useState([]);
+  const { showToast } = useToast();
 
   const toggleCompare = (id) => {
     setCompareIds(prev => {
       if (prev.includes(id)) return prev.filter(x => x !== id);
       if (prev.length >= 3) {
-        alert('Chỉ có thể so sánh tối đa 3 sản phẩm!');
+        showToast('Chỉ có thể so sánh tối đa 3 sản phẩm!', 'warning');
         return prev;
       }
       return [...prev, id];

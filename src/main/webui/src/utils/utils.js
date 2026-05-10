@@ -20,7 +20,7 @@ export const mapProduct = (backendP) => {
     id: backendP.id,
     name: backendP.tenSanPham,
     price: backendP.giaBanSo,
-    oldPrice: backendP.giaGocSo || 0,
+    oldPrice: backendP.giaGocSo > 0 ? backendP.giaGocSo : null,
     img: backendP.hinhAnh,
     brand: backendP.danhMuc,
     specs: specsObj,

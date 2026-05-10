@@ -29,8 +29,8 @@ export default function OrdersPage() {
     <div className="profile-page">
       <div className="container">
         <div className="breadcrumb">
-          <Link to="/"><i className="fa fa-home"></i> Trang chủ</Link>
-          <span className="sep"><i className="fa fa-chevron-right"></i></span>
+          <Link to="/"><i className="fas fa-house"></i> Trang chủ</Link>
+          <span className="sep"><i className="fas fa-chevron-right"></i></span>
           <span>Đơn hàng của tôi</span>
         </div>
 
@@ -44,10 +44,10 @@ export default function OrdersPage() {
               </div>
             </div>
             <nav className="ps-nav">
-              <Link to="/profile"><i className="fa fa-user"></i> Hồ sơ của tôi</Link>
-              <Link to="/orders" className="active"><i className="fa fa-box"></i> Đơn hàng mua</Link>
-              <Link to="/rewards"><i className="fa fa-star"></i> Điểm & Coupon</Link>
-              <button className="ps-logout"><i className="fa fa-sign-out-alt"></i> Đăng xuất</button>
+              <Link to="/profile"><i className="fas fa-user"></i> Hồ sơ của tôi</Link>
+              <Link to="/orders" className="active"><i className="fas fa-box"></i> Đơn hàng mua</Link>
+              <Link to="/rewards"><i className="fas fa-star"></i> Điểm & Coupon</Link>
+              <button className="ps-logout"><i className="fas fa-right-from-bracket"></i> Đăng xuất</button>
             </nav>
           </div>
 
@@ -58,7 +58,7 @@ export default function OrdersPage() {
                <div>Đang tải đơn hàng...</div>
             ) : orders.length === 0 ? (
               <div className="empty-state">
-                <i className="fa fa-box-open"></i>
+                <i className="fas fa-box-open"></i>
                 <h3>Bạn chưa có đơn hàng nào</h3>
                 <Link to="/brand/all" className="btn btn-primary" style={{marginTop: '10px'}}>Mua sắm ngay</Link>
               </div>
@@ -89,7 +89,7 @@ export default function OrdersPage() {
                         {order.discountAmount > 0 && <span style={{fontSize: '0.85em', color: 'gray', display: 'block'}}>(Đã giảm {fmt(order.discountAmount)})</span>}
                       </div>
                       <div className="order-actions">
-                        <button className="btn btn-outline btn-sm">Xem chi tiết</button>
+                        <Link to={`/orders/${order.id}`} className="btn btn-outline btn-sm">Xem chi tiết</Link>
                       </div>
                     </div>
                   </div>

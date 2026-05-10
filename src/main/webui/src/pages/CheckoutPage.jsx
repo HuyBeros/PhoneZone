@@ -42,7 +42,7 @@ export default function CheckoutPage() {
         couponCode: appliedCoupon ? appliedCoupon.code : null
       };
 
-      await fetchApi('/orders', {
+      const res = await fetchApi('/orders', {
         method: 'POST',
         body: JSON.stringify(orderRequest)
       });
@@ -51,7 +51,12 @@ export default function CheckoutPage() {
         markCouponUsed();
       }
       fetchCart(); // Xóa giỏ hàng local bằng cách fetch lại (Backend đã clear giỏ hàng)
-      setIsSuccess(true);
+      
+      if (res && res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+      } else {
+        setIsSuccess(true);
+      }
     } catch (err) {
       setErrorMsg(err.message || 'Lỗi đặt hàng');
     } finally {
@@ -62,7 +67,7 @@ export default function CheckoutPage() {
   if (isSuccess) {
     return (
       <div className="checkout-success">
-        <div className="success-icon"><i className="fa fa-check-circle"></i></div>
+        <div className="success-icon"><i className="fas fa-circle-check"></i></div>
         <h2>Đặt hàng thành công!</h2>
         <p>Cảm ơn bạn đã tin tưởng mua sắm tại PhoneZone.</p>
         <p>Chúng tôi sẽ gọi xác nhận đơn hàng trong vòng 15 phút.</p>
@@ -80,8 +85,8 @@ export default function CheckoutPage() {
     <div className="checkout-page">
       <div className="container">
         <div className="breadcrumb">
-          <Link to="/"><i className="fa fa-home"></i> Trang chủ</Link>
-          <span className="sep"><i className="fa fa-chevron-right"></i></span>
+          <Link to="/"><i className="fas fa-house"></i> Trang chủ</Link>
+          <span className="sep"><i className="fas fa-chevron-right"></i></span>
           <span>Thanh toán</span>
         </div>
 
@@ -94,7 +99,7 @@ export default function CheckoutPage() {
           <div className="checkout-left">
             <form id="checkoutForm" onSubmit={handleSubmit} className="checkout-form">
               <div className="form-section">
-                <h3 className="form-title"><i className="fa fa-map-marker-alt"></i> Thông tin giao hàng</h3>
+                <h3 className="form-title"><i className="fas fa-location-dot"></i> Thông tin giao hàng</h3>
                 <div className="form-row">
                   <div className="form-group">
                     <label>Họ và tên *</label>
@@ -116,17 +121,22 @@ export default function CheckoutPage() {
               </div>
 
               <div className="form-section">
-                <h3 className="form-title"><i className="fa fa-credit-card"></i> Phương thức thanh toán</h3>
+                <h3 className="form-title"><i className="fas fa-credit-card"></i> Phương thức thanh toán</h3>
                 <div className="payment-methods">
                   <label className={`pm-label ${formData.paymentMethod === 'COD' ? 'active' : ''}`}>
                     <input type="radio" name="payment" value="COD" checked={formData.paymentMethod === 'COD'} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} />
-                    <span className="pm-icon"><i className="fa fa-money-bill-wave"></i></span>
+                    <span className="pm-icon"><i className="fas fa-money-bill-wave"></i></span>
                     <span className="pm-text">Thanh toán khi nhận hàng (COD)</span>
                   </label>
                   <label className={`pm-label ${formData.paymentMethod === 'BANK' ? 'active' : ''}`}>
                     <input type="radio" name="payment" value="BANK" checked={formData.paymentMethod === 'BANK'} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} />
-                    <span className="pm-icon"><i className="fa fa-university"></i></span>
+                    <span className="pm-icon"><i className="fas fa-building-columns"></i></span>
                     <span className="pm-text">Chuyển khoản ngân hàng</span>
+                  </label>
+                  <label className={`pm-label ${formData.paymentMethod === 'VNPAY' ? 'active' : ''}`}>
+                    <input type="radio" name="payment" value="VNPAY" checked={formData.paymentMethod === 'VNPAY'} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} />
+                    <span className="pm-icon"><i className="fas fa-wallet"></i></span>
+                    <span className="pm-text">Thanh toán qua VNPAY</span>
                   </label>
                 </div>
               </div>

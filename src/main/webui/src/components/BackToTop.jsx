@@ -15,7 +15,7 @@ export default function BackToTop() {
       aria-label="Lên đầu trang"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
     >
-      <i className="fa fa-chevron-up"></i>
+      <i className="fas fa-chevron-up"></i>
     </button>
   );
 }

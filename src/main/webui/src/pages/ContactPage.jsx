@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useToast } from '../store/ToastContext';
+import { fetchApi } from '../api/apiClient';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -10,6 +12,7 @@ export default function ContactPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showToast } = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,13 +22,16 @@ export default function ContactPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      alert('✅ Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 24 giờ.');
+    try {
+      await fetchApi('/contact', {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      });
+      showToast('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 24 giờ.', 'success', 4000);
       setFormData({
         name: '',
         email: '',
@@ -33,8 +39,11 @@ export default function ContactPage() {
         budget: '',
         message: ''
       });
+    } catch (err) {
+      showToast('Lỗi gửi tin nhắn: ' + err.message, 'error');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (

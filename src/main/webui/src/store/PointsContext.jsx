@@ -3,14 +3,7 @@ import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { fetchApi } from '../api/apiClient';
 
-// For UI reference to show available tiers (can also be fetched from /api/rewards/coupons/available)
-export const COUPON_TIERS = [
-  { id: 1, points: 100,  discount: 20000,  label: 'Giảm 20.000đ',              code: 'PZ20K',  freeShip: false, color: '#3fb950' },
-  { id: 2, points: 250,  discount: 50000,  label: 'Giảm 50.000đ',              code: 'PZ50K',  freeShip: false, color: '#58a6ff' },
-  { id: 3, points: 500,  discount: 100000, label: 'Giảm 100.000đ',             code: 'PZ100K', freeShip: false, color: '#f0a500' },
-  { id: 4, points: 1000, discount: 200000, label: 'Giảm 200.000đ + Miễn ship', code: 'PZ200K', freeShip: true,  color: '#e63946' },
-];
-
+// Will be fetched dynamically from the server
 const PointsContext = createContext();
 
 export function PointsProvider({ children }) {
@@ -18,17 +11,36 @@ export function PointsProvider({ children }) {
   const { token } = useAuth();
 
   const [points, setPoints] = useState(0);
-  const [coupons, setCoupons] = useState([]);
+  const [coupons, setCoupons] = useState([]); // user's wallet
+  const [availableCoupons, setAvailableCoupons] = useState([]); // coupons available to redeem
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   const fetchRewardsData = useCallback(async () => {
-    if (!token) {
-      setPoints(0);
-      setCoupons([]);
-      setAppliedCoupon(null);
-      return;
-    }
     try {
+      // Available coupons don't require auth to view, but we'll fetch them anyway
+      const availData = await fetchApi('/rewards/coupons/available').catch(() => []);
+      if (availData) {
+        setAvailableCoupons(availData.map((c, i) => {
+          const colors = ['#3fb950', '#58a6ff', '#f0a500', '#e63946', '#9c27b0', '#00bcd4'];
+          return {
+            id: c.id,
+            points: c.pointsRequired,
+            discount: c.discountAmount,
+            label: c.description || `Giảm ${c.discountAmount.toLocaleString()}đ`,
+            code: c.code,
+            freeShip: c.description && c.description.toLowerCase().includes('miễn ship'),
+            color: colors[i % colors.length]
+          };
+        }).sort((a, b) => a.points - b.points));
+      }
+
+      if (!token) {
+        setPoints(0);
+        setCoupons([]);
+        setAppliedCoupon(null);
+        return;
+      }
+
       const pData = await fetchApi('/rewards/points');
       if (pData) setPoints(pData.points);
 
@@ -89,7 +101,7 @@ export function PointsProvider({ children }) {
 
   return (
     <PointsContext.Provider value={{
-      points, coupons, appliedCoupon,
+      points, coupons, appliedCoupon, availableCoupons,
       redeemPoints, applyCoupon, removeCoupon, markCouponUsed, fetchRewardsData
     }}>
       {children}

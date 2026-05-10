@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { usePoints, COUPON_TIERS } from '../store/PointsContext';
+import { usePoints } from '../store/PointsContext';
 import { fmt } from '../utils/utils';
 
-// Mốc điểm tiếp theo
-function getNextTier(points) {
-  return COUPON_TIERS.find(t => t.points > points) || null;
-}
-
 export default function RewardsPage() {
-  const { points, coupons, redeemPoints, addPoints } = usePoints();
+  const { points, coupons, availableCoupons, redeemPoints, addPoints } = usePoints();
   const [simAmount, setSimAmount] = useState('');
+  
+  // Mốc điểm tiếp theo
+  const getNextTier = (pts) => {
+    return availableCoupons.find(t => t.points > pts) || null;
+  };
+
   const nextTier = getNextTier(points);
   const progress = nextTier
     ? Math.min(100, Math.round((points / nextTier.points) * 100))
@@ -52,7 +53,7 @@ export default function RewardsPage() {
                 </div>
               )}
               {!nextTier && (
-                <div className="rpc-max">🏆 Bạn đã đạt mốc cao nhất!</div>
+                <div className="rpc-max"><i className="fa fa-trophy"></i> Bạn đã đạt mốc cao nhất!</div>
               )}
             </div>
           </div>
@@ -66,45 +67,55 @@ export default function RewardsPage() {
           <h2 className="rewards-section-title">
             <i className="fa fa-gift"></i> Đổi điểm lấy coupon
           </h2>
-          <div className="coupon-tiers-grid">
-            {COUPON_TIERS.map(tier => {
-              const canRedeem = points >= tier.points;
-              return (
-                <div
-                  key={tier.id}
-                  className={`coupon-tier-card${canRedeem ? ' can-redeem' : ''}`}
-                  style={{ '--tier-color': tier.color }}
-                >
-                  <div className="ctc-badge" style={{ background: tier.color }}>
-                    {tier.freeShip ? '👑' : '🎟️'}
-                  </div>
-                  <div className="ctc-points">
-                    <i className="fa fa-star"></i> {tier.points.toLocaleString()} điểm
-                  </div>
-                  <div className="ctc-label">{tier.label}</div>
-                  <div className="ctc-code">Mã: <code>{tier.code}</code></div>
-                  {tier.freeShip && (
-                    <div className="ctc-freeship">
-                      <i className="fa fa-truck"></i> Miễn phí vận chuyển
-                    </div>
-                  )}
-                  <div className="ctc-have">
-                    Bạn có: <strong style={{ color: canRedeem ? tier.color : 'var(--text2)' }}>
-                      {points.toLocaleString()}
-                    </strong> / {tier.points.toLocaleString()} điểm
-                  </div>
-                  <button
-                    className="btn ctc-btn"
-                    style={canRedeem ? { background: tier.color, color: '#fff' } : {}}
-                    disabled={!canRedeem}
-                    onClick={() => redeemPoints(tier.id)}
+          {availableCoupons.length === 0 ? (
+            <div className="rewards-empty" style={{background: '#f8fafc', border: '1px dashed #cbd5e1', boxShadow: 'none'}}>
+              <div style={{fontSize: '3rem', color: '#94a3b8', marginBottom: '10px'}}>
+                <i className="fa fa-gift"></i>
+              </div>
+              <h3 style={{color: '#475569', marginBottom: '8px'}}>Chưa có mã giảm giá nào</h3>
+              <p style={{color: '#64748b'}}>Hiện tại hệ thống chưa có mã giảm giá nào để quy đổi. Vui lòng quay lại sau nhé!</p>
+            </div>
+          ) : (
+            <div className="coupon-tiers-grid">
+              {availableCoupons.map(tier => {
+                const canRedeem = points >= tier.points;
+                return (
+                  <div
+                    key={tier.id}
+                    className={`coupon-tier-card${canRedeem ? ' can-redeem' : ''}`}
+                    style={{ '--tier-color': tier.color }}
                   >
-                    {canRedeem ? '🎁 Đổi ngay' : `Cần thêm ${(tier.points - points).toLocaleString()} điểm`}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                    <div className="ctc-badge" style={{ background: tier.color, color: '#fff' }}>
+                      {tier.freeShip ? <i className="fa fa-truck"></i> : <i className="fa fa-ticket-alt"></i>}
+                    </div>
+                    <div className="ctc-points">
+                      <i className="fa fa-star"></i> {tier.points.toLocaleString()} điểm
+                    </div>
+                    <div className="ctc-label">{tier.label}</div>
+                    <div className="ctc-code">Mã: <code>{tier.code}</code></div>
+                    {tier.freeShip && (
+                      <div className="ctc-freeship">
+                        <i className="fa fa-truck"></i> Miễn phí vận chuyển
+                      </div>
+                    )}
+                    <div className="ctc-have">
+                      Bạn có: <strong style={{ color: canRedeem ? tier.color : 'var(--text2)' }}>
+                        {points.toLocaleString()}
+                      </strong> / {tier.points.toLocaleString()} điểm
+                    </div>
+                    <button
+                      className="btn ctc-btn"
+                      style={canRedeem ? { background: tier.color, color: '#fff' } : {}}
+                      disabled={!canRedeem}
+                      onClick={() => redeemPoints(tier.id)}
+                    >
+                      {canRedeem ? <><i className="fa fa-gift"></i> Đổi ngay</> : `Cần thêm ${(tier.points - points).toLocaleString()} điểm`}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* ── Ví coupon của tôi ── */}
@@ -125,7 +136,7 @@ export default function RewardsPage() {
             <>
               {unusedCoupons.length > 0 && (
                 <div className="wallet-group">
-                  <div className="wallet-group-title">✅ Có thể sử dụng ({unusedCoupons.length})</div>
+                  <div className="wallet-group-title"><i className="fa fa-check-circle" style={{color: 'var(--green)'}}></i> Có thể sử dụng ({unusedCoupons.length})</div>
                   <div className="wallet-coupons">
                     {unusedCoupons.map(c => (
                       <WalletCouponCard key={c.uid} coupon={c} />
@@ -135,7 +146,7 @@ export default function RewardsPage() {
               )}
               {usedCoupons.length > 0 && (
                 <div className="wallet-group">
-                  <div className="wallet-group-title">🗃️ Đã sử dụng ({usedCoupons.length})</div>
+                  <div className="wallet-group-title"><i className="fa fa-archive"></i> Đã sử dụng ({usedCoupons.length})</div>
                   <div className="wallet-coupons">
                     {usedCoupons.map(c => (
                       <WalletCouponCard key={c.uid} coupon={c} used />
@@ -194,8 +205,8 @@ function WalletCouponCard({ coupon, used = false }) {
     <div className={`wallet-coupon${used ? ' used' : ''}`}
       style={{ '--c': used ? '#444' : cColor }}>
       <div className="wc-left">
-        <div className="wc-icon" style={{ background: used ? '#333' : cColor }}>
-          {coupon.freeShip ? '👑' : '🎟️'}
+        <div className="wc-icon" style={{ background: used ? '#333' : cColor, color: '#fff' }}>
+          {coupon.freeShip ? <i className="fa fa-truck"></i> : <i className="fa fa-ticket-alt"></i>}
         </div>
         <div>
           <div className="wc-label">{coupon.label}</div>

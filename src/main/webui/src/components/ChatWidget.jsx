@@ -24,7 +24,6 @@ export default function ChatWidget() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
 
-    // Giả lập bot trả lời sau 1 giây
     setTimeout(() => {
       const botMsg = { id: Date.now() + 1, sender: 'bot', text: 'Cảm ơn bạn đã liên hệ. Hiện tại các nhân viên đang bận, vui lòng để lại lời nhắn hoặc gọi hotline 1800.xxxx.' };
       setMessages(prev => [...prev, botMsg]);
@@ -33,28 +32,28 @@ export default function ChatWidget() {
 
   return (
     <>
-      <button 
-        className={`chat-bubble-btn ${isOpen ? 'hidden' : ''}`} 
+      <button
+        className={`chat-bubble-btn ${isOpen ? 'hidden' : ''}`}
         onClick={() => setIsOpen(true)}
         aria-label="Chat với chúng tôi"
       >
-        <i className="fa fa-comment-dots"></i>
+        <i className="fas fa-comment-dots"></i>
       </button>
 
       <div className={`chat-widget-window ${isOpen ? 'active' : ''}`}>
         <div className="cww-header">
           <div className="cww-h-info">
-            <div className="cww-avatar"><i className="fa fa-robot"></i></div>
+            <div className="cww-avatar"><i className="fas fa-robot"></i></div>
             <div>
               <strong>PhoneZone Support</strong>
               <span>Trực tuyến</span>
             </div>
           </div>
           <button className="cww-close" onClick={() => setIsOpen(false)}>
-            <i className="fa fa-times"></i>
+            <i className="fas fa-xmark"></i>
           </button>
         </div>
-        
+
         <div className="cww-body">
           {messages.map(msg => (
             <div key={msg.id} className={`chat-message ${msg.sender}`}>
@@ -65,13 +64,13 @@ export default function ChatWidget() {
         </div>
 
         <form className="cww-footer" onSubmit={handleSend}>
-          <input 
-            type="text" 
-            placeholder="Nhập tin nhắn..." 
-            value={input} 
-            onChange={e => setInput(e.target.value)} 
+          <input
+            type="text"
+            placeholder="Nhập tin nhắn..."
+            value={input}
+            onChange={e => setInput(e.target.value)}
           />
-          <button type="submit"><i className="fa fa-paper-plane"></i></button>
+          <button type="submit"><i className="fas fa-paper-plane"></i></button>
         </form>
       </div>
     </>

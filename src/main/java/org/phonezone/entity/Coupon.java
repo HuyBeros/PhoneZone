@@ -29,5 +29,6 @@ public class Coupon extends PanacheEntity {
 
     // Quan hệ 1-N: Một Coupon được nhiều User sở hữu
     @OneToMany(mappedBy = "coupon")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public List<UserCoupon> userCoupons;
 }

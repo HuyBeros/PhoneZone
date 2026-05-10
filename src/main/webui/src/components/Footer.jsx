@@ -48,11 +48,11 @@ export default function Footer() {
         <div className="footer-col">
           <h4>Liên hệ</h4>
           <ul className="contact-list">
-            <li><i className="fa fa-map-marker-alt"></i> 123 Cầu Giấy, Hà Nội</li>
-            <li><i className="fa fa-map-marker-alt"></i> 456 Lê Văn Việt, TP.HCM</li>
-            <li><i className="fa fa-phone"></i> 1800 1234 (miễn phí)</li>
-            <li><i className="fa fa-envelope"></i> lienhe@phonezone.vn</li>
-            <li><i className="fa fa-clock"></i> 8:00 – 22:00 mỗi ngày</li>
+            <li><i className="fas fa-location-dot"></i> 123 Cầu Giấy, Hà Nội</li>
+            <li><i className="fas fa-location-dot"></i> 456 Lê Văn Việt, TP.HCM</li>
+            <li><i className="fas fa-phone"></i> 1800 1234 (miễn phí)</li>
+            <li><i className="fas fa-envelope"></i> lienhe@phonezone.vn</li>
+            <li><i className="fas fa-clock"></i> 8:00 – 22:00 mỗi ngày</li>
           </ul>
         </div>
       </div>

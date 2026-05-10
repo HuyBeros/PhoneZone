@@ -44,7 +44,7 @@ public class OrderService {
         order.customerEmail = request.customerEmail;
         order.shippingAddress = request.shippingAddress;
         order.paymentMethod = request.paymentMethod != null ? request.paymentMethod : "COD";
-        order.status = "PENDING";
+        order.status = "Đang xử lý";
         
         long totalAmount = 0L;
         List<OrderItem> orderItems = new ArrayList<>();
@@ -103,6 +103,22 @@ public class OrderService {
         // Xóa giỏ hàng
         cartService.clearCart(username);
 
+        return order;
+    }
+
+    // --- ADMIN METHODS ---
+
+    public List<Order> getAllOrders() {
+        return Order.find("order by createdAt desc").list();
+    }
+
+    @Transactional
+    public Order updateOrderStatus(Long orderId, String newStatus) {
+        Order order = Order.findById(orderId);
+        if (order == null) return null;
+        
+        order.status = newStatus;
+        order.persist();
         return order;
     }
 }

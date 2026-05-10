@@ -41,14 +41,14 @@ export default function ProductCard({ product: p }) {
             className="btn-cart"
             onClick={(e) => { e.stopPropagation(); addToCart(p.id); }}
           >
-            <i className="fa fa-cart-plus"></i> Mua ngay
+            <i className="fas fa-cart-plus"></i> Mua ngay
           </button>
           <button 
             className={`btn-view ${isCompared ? 'compared' : ''}`} 
             title={isCompared ? "Đã thêm vào so sánh" : "Thêm vào so sánh"}
             onClick={(e) => { e.stopPropagation(); toggleCompare(p.id); }}
           >
-            <i className="fa fa-balance-scale"></i>
+            <i className="fas fa-scale-balanced"></i>
           </button>
         </div>
       </div>

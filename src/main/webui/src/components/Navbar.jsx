@@ -14,6 +14,8 @@ function getInitials(name) {
 
 /* ── User Dropdown ── */
 function UserDropdown({ user, onLogout }) {
+  const isAdmin = user?.role === 'ROLE_ADMIN';
+
   return (
     <div className="user-dropdown-wrap">
       {/* Trigger */}
@@ -26,7 +28,8 @@ function UserDropdown({ user, onLogout }) {
         </div>
         <div className="user-info-mini">
           <span className="user-name-mini">{(user.fullName || user.username).split(' ').pop()}</span>
-          <i className="fa fa-chevron-down user-caret"></i>
+          {isAdmin && <span className="admin-badge-mini">Admin</span>}
+          <i className="fas fa-chevron-down user-caret"></i>
         </div>
       </div>
 
@@ -34,23 +37,41 @@ function UserDropdown({ user, onLogout }) {
       <div className="user-dropdown">
         {/* Header */}
         <div className="ud-header">
-          <div className="ud-avatar">
+          <div className="ud-avatar" style={isAdmin ? {background: 'linear-gradient(135deg,#6366f1,#8b5cf6)'} : {}}>
             {user.avatar
               ? <img src={user.avatar} alt={user.fullName || user.username} />
               : <span>{getInitials(user.fullName || user.username)}</span>
             }
           </div>
           <div className="ud-info">
-            <div className="ud-name">{user.fullName || user.username}</div>
+            <div className="ud-name">
+              {user.fullName || user.username}
+              {isAdmin && <span className="ud-admin-tag">Admin</span>}
+            </div>
             <div className="ud-email">{user.email || 'Thành viên PhoneZone'}</div>
           </div>
         </div>
 
         <div className="ud-divider"></div>
 
+        {/* Admin Panel Link - chỉ hiển thị với ROLE_ADMIN */}
+        {isAdmin && (
+          <>
+            <Link to="/admin" className="ud-item ud-admin-item">
+              <span className="ud-item-icon ud-icon-admin"><i className="fas fa-shield-halved"></i></span>
+              <div>
+                <div className="ud-item-label">Trang quản trị</div>
+                <div className="ud-item-sub">Quản lý sản phẩm, đơn hàng</div>
+              </div>
+              <i className="fas fa-arrow-right ud-admin-arrow"></i>
+            </Link>
+            <div className="ud-divider"></div>
+          </>
+        )}
+
         {/* Menu items */}
         <Link to="/profile" className="ud-item">
-          <span className="ud-item-icon"><i className="fa fa-user-edit"></i></span>
+          <span className="ud-item-icon"><i className="fas fa-user-pen"></i></span>
           <div>
             <div className="ud-item-label">Thông tin cá nhân</div>
             <div className="ud-item-sub">Chỉnh sửa hồ sơ, địa chỉ</div>
@@ -58,7 +79,7 @@ function UserDropdown({ user, onLogout }) {
         </Link>
 
         <Link to="/rewards" className="ud-item">
-          <span className="ud-item-icon ud-icon-gold"><i className="fa fa-ticket-alt"></i></span>
+          <span className="ud-item-icon ud-icon-gold"><i className="fas fa-ticket"></i></span>
           <div>
             <div className="ud-item-label">Coupon của tôi</div>
             <div className="ud-item-sub">Xem & sử dụng mã giảm giá</div>
@@ -66,7 +87,7 @@ function UserDropdown({ user, onLogout }) {
         </Link>
 
         <Link to="/orders" className="ud-item">
-          <span className="ud-item-icon ud-icon-blue"><i className="fa fa-box"></i></span>
+          <span className="ud-item-icon ud-icon-blue"><i className="fas fa-box"></i></span>
           <div>
             <div className="ud-item-label">Đơn hàng của tôi</div>
             <div className="ud-item-sub">Theo dõi trạng thái giao hàng</div>
@@ -74,7 +95,7 @@ function UserDropdown({ user, onLogout }) {
         </Link>
 
         <Link to="/rewards" className="ud-item">
-          <span className="ud-item-icon ud-icon-yellow"><i className="fa fa-star"></i></span>
+          <span className="ud-item-icon ud-icon-yellow"><i className="fas fa-star"></i></span>
           <div>
             <div className="ud-item-label">Điểm thưởng</div>
             <div className="ud-item-sub">Đổi điểm lấy coupon ưu đãi</div>
@@ -84,7 +105,7 @@ function UserDropdown({ user, onLogout }) {
         <div className="ud-divider"></div>
 
         <button className="ud-item ud-logout" onClick={onLogout}>
-          <span className="ud-item-icon ud-icon-red"><i className="fa fa-sign-out-alt"></i></span>
+          <span className="ud-item-icon ud-icon-red"><i className="fas fa-right-from-bracket"></i></span>
           <div>
             <div className="ud-item-label">Đăng xuất</div>
             <div className="ud-item-sub">Tạm biệt, {(user.fullName || user.username).split(' ').pop()}!</div>
@@ -178,7 +199,7 @@ export default function Navbar() {
           {/* Điện thoại với hover dropdown */}
           <div className="nav-dropdown-wrap">
             <Link to="/brand/all" className="nav-link nav-link-has-dropdown" onClick={closeMobile}>
-              Điện thoại <i className="fa fa-chevron-down nav-caret"></i>
+              Điện thoại <i className="fas fa-chevron-down nav-caret"></i>
             </Link>
             <div className="nav-dropdown">
               <div className="nav-dropdown-brands">
@@ -200,7 +221,7 @@ export default function Navbar() {
               </div>
               <div className="nav-dd-divider"></div>
               <Link className="nav-dd-all" to="/brand/all" onClick={closeMobile}>
-                <i className="fa fa-th-large"></i> Xem tất cả hãng
+                <i className="fas fa-grip"></i> Xem tất cả hãng
               </Link>
             </div>
           </div>
@@ -223,7 +244,7 @@ export default function Navbar() {
               value={searchTerm}
               onChange={handleSearch}
             />
-            <button aria-label="Tìm kiếm"><i className="fa fa-search"></i></button>
+            <button aria-label="Tìm kiếm"><i className="fas fa-magnifying-glass"></i></button>
 
             {searchTerm.length > 1 && searchResults.length > 0 && (
               <div className="search-results">
@@ -241,12 +262,12 @@ export default function Navbar() {
           </div>
 
           <Link to="/rewards" className="icon-btn rewards-nav-btn" title="Điểm thưởng">
-            <i className="fa fa-star"></i>
+            <i className="fas fa-star"></i>
             <span className="badge rewards-badge">{points}</span>
           </Link>
 
           <button className="icon-btn" aria-label="Giỏ hàng" onClick={openCart}>
-            <i className="fa fa-shopping-cart"></i>
+            <i className="fas fa-cart-shopping"></i>
             <span className="badge">{cartCount}</span>
           </button>
 
@@ -255,7 +276,7 @@ export default function Navbar() {
             <UserDropdown user={user} onLogout={handleLogout} />
           ) : (
             <button className="btn-login" onClick={handleLogin}>
-              <i className="fa fa-user-circle"></i>
+              <i className="fas fa-user-circle"></i>
               <span>Đăng nhập</span>
             </button>
           )}

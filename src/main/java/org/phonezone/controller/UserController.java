@@ -29,7 +29,6 @@ public class UserController {
     /**
      * Lấy thông tin cá nhân (yêu cầu đăng nhập).
      * GET /api/users/me
-     * Header: Authorization: Bearer <token>
      */
     @GET
     @Path("/me")
@@ -64,4 +63,39 @@ public class UserController {
                 "user", UserResponse.from(user)
         )).build();
     }
+
+    /**
+     * Đổi mật khẩu (yêu cầu xác nhận mật khẩu cũ).
+     * PUT /api/users/me/password
+     * Body: { "currentPassword": "...", "newPassword": "...", "confirmPassword": "..." }
+     */
+    @PUT
+    @Path("/me/password")
+    public Response changePassword(Map<String, String> body) {
+        String currentPassword = body.get("currentPassword");
+        String newPassword     = body.get("newPassword");
+        String confirmPassword = body.get("confirmPassword");
+
+        if (currentPassword == null || currentPassword.isBlank()) {
+            return Response.status(400).entity(Map.of("error", "Vui lòng nhập mật khẩu hiện tại")).build();
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            return Response.status(400).entity(Map.of("error", "Vui lòng nhập mật khẩu mới")).build();
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            return Response.status(400).entity(Map.of("error", "Mật khẩu mới và xác nhận không khớp")).build();
+        }
+
+        try {
+            String username = jwt.getName();
+            User user = userService.changePassword(username, currentPassword, newPassword);
+            if (user == null) {
+                return Response.status(404).entity(Map.of("error", "Không tìm thấy tài khoản")).build();
+            }
+            return Response.ok(Map.of("message", "Đổi mật khẩu thành công!")).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(400).entity(Map.of("error", e.getMessage())).build();
+        }
+    }
 }
+

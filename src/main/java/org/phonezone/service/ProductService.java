@@ -88,4 +88,36 @@ public class ProductService {
                 .createQuery("SELECT DISTINCT p.danhMuc FROM Product p WHERE p.danhMuc IS NOT NULL ORDER BY p.danhMuc", String.class)
                 .getResultList();
     }
+
+    // --- ADMIN METHODS ---
+
+    @jakarta.transaction.Transactional
+    public Product createProduct(Product product) {
+        product.persist();
+        return product;
+    }
+
+    @jakarta.transaction.Transactional
+    public Product updateProduct(Long id, Product updatedProduct) {
+        Product existing = Product.findById(id);
+        if (existing == null) {
+            return null;
+        }
+        
+        existing.tenSanPham = updatedProduct.tenSanPham;
+        existing.giaBanSo = updatedProduct.giaBanSo;
+        existing.giaGocSo = updatedProduct.giaGocSo;
+        existing.hinhAnh = updatedProduct.hinhAnh;
+        existing.danhMuc = updatedProduct.danhMuc;
+        existing.stockQuantity = updatedProduct.stockQuantity;
+        existing.isActive = updatedProduct.isActive;
+
+        existing.persist();
+        return existing;
+    }
+
+    @jakarta.transaction.Transactional
+    public boolean deleteProduct(Long id) {
+        return Product.deleteById(id);
+    }
 }
