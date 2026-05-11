@@ -11,30 +11,20 @@ RUN apt-get update && apt-get install -y curl \
 COPY pom.xml .
 COPY src ./src
 
-# Build the application (skip tests to save time & memory on Render)
+# Build the application
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Copy the built artifacts from the build stage
+# Copy the built artifacts
 COPY --from=build /app/target/quarkus-app/lib/ /app/lib/
 COPY --from=build /app/target/quarkus-app/*.jar /app/
 COPY --from=build /app/target/quarkus-app/app/ /app/app/
 COPY --from=build /app/target/quarkus-app/quarkus/ /app/quarkus/
 
-# Create Quarkus runtime config directory
-# Files here have HIGHER priority than the bundled application.properties
-# This bypasses all env var / profile resolution issues
-RUN mkdir -p /app/config
-
-COPY config-prod.properties /app/config/application.properties
-
-# Set the port for Render
 EXPOSE 8080
 ENV QUARKUS_HTTP_PORT=8080
-ENV PORT=8080
 
-# Run the Quarkus app
 CMD ["java", "-jar", "quarkus-run.jar"]
