@@ -185,4 +185,35 @@ public class OrderController {
                     .build();
         }
     }
+
+    @PUT
+    @Path("/{id}/cancel")
+    @jakarta.transaction.Transactional
+    public Response cancelOrder(@PathParam("id") Long orderId) {
+        try {
+            String username = jwt.getName();
+            Order order = orderService.cancelOrder(username, orderId);
+
+            if (order == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(Map.of("error", "Không tìm thấy đơn hàng"))
+                        .build();
+            }
+
+            return Response.ok(Map.of(
+                    "message", "Hủy đơn hàng thành công",
+                    "order", OrderResponse.from(order)
+            )).build();
+
+        } catch (IllegalStateException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of("error", "Lỗi hệ thống: " + (e.getMessage() != null ? e.getMessage() : e.toString())))
+                    .build();
+        }
+    }
 }

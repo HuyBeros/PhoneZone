@@ -36,7 +36,12 @@ export async function fetchApi(endpoint, options = {}) {
         }
 
         if (!response.ok) {
-            throw new Error((data && data.error) || data?.message || 'Có lỗi xảy ra khi gọi API');
+            // Quarkus ConstraintViolation format: {"violations": [{field, message}]}
+            if (data && data.violations && data.violations.length > 0) {
+                const msgs = data.violations.map(v => v.message).join('; ');
+                throw new Error(msgs);
+            }
+            throw new Error((data && data.error) || data?.message || data?.title || 'Có lỗi xảy ra khi gọi API');
         }
 
         return data;

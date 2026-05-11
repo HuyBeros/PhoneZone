@@ -15,7 +15,7 @@ export default function CheckoutPage() {
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const finalTotal = Math.max(0, total + shippingFee - discountAmount);
 
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '', note: '', paymentMethod: 'cod' });
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '', note: '', paymentMethod: 'COD' });
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -92,7 +92,12 @@ export default function CheckoutPage() {
 
         <h1 className="page-title">Thanh toán an toàn</h1>
 
-        {errorMsg && <div className="alert alert-danger" style={{color: 'red', marginBottom: '20px'}}>{errorMsg}</div>}
+        {errorMsg && (
+          <div className="checkout-error-msg">
+            <i className="fas fa-circle-exclamation"></i>
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         <div className="checkout-main">
           {/* Cột trái: Form thông tin */}

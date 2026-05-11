@@ -121,4 +121,34 @@ public class OrderService {
         order.persist();
         return order;
     }
+
+    @Transactional
+    public Order cancelOrder(String username, Long orderId) {
+        User user = User.find("username", username).firstResult();
+        if (user == null) return null;
+
+        Order order = Order.find("id = ?1 and user = ?2", orderId, user).firstResult();
+        if (order == null) return null;
+
+        // Chỉ cho phép hủy khi đơn đang ở trạng thái "Đang xử lý"
+        if (!"Đang xử lý".equals(order.status)) {
+            throw new IllegalStateException("Không thể hủy đơn hàng ở trạng thái: " + order.status);
+        }
+
+        // Hoàn lại số lượng tồn kho
+        if (order.orderItems != null) {
+            for (OrderItem item : order.orderItems) {
+                Product product = item.product;
+                if (product != null) {
+                    product.stockQuantity += item.quantity;
+                    product.persist();
+                }
+            }
+        }
+
+        order.status = "Đã hủy";
+        order.updatedAt = java.time.LocalDateTime.now();
+        order.persist();
+        return order;
+    }
 }
