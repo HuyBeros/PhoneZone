@@ -11,28 +11,25 @@ RUN apt-get update && apt-get install -y curl \
 COPY pom.xml .
 COPY src ./src
 
-# Docker build args - passed from Render's "Build & Deploy" settings
-ARG DB_JDBC_URL
-ARG DB_USERNAME
-ARG DB_PASSWORD
-
-# Build the application
-# Pass datasource config at build time so Quarkus FastBoot bakes correct credentials
-RUN mvn clean package -DskipTests \
-    -Dquarkus.datasource.jdbc.url="${DB_JDBC_URL}" \
-    -Dquarkus.datasource.username="${DB_USERNAME}" \
-    -Dquarkus.datasource.password="${DB_PASSWORD}"
+# Build the application (skip tests to save time & memory on Render)
+RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Copy the built artifacts from the build stage
-# Quarkus uses fast-jar by default
 COPY --from=build /app/target/quarkus-app/lib/ /app/lib/
 COPY --from=build /app/target/quarkus-app/*.jar /app/
 COPY --from=build /app/target/quarkus-app/app/ /app/app/
 COPY --from=build /app/target/quarkus-app/quarkus/ /app/quarkus/
+
+# Create Quarkus runtime config directory
+# Files here have HIGHER priority than the bundled application.properties
+# This bypasses all env var / profile resolution issues
+RUN mkdir -p /app/config
+
+COPY config-prod.properties /app/config/application.properties
 
 # Set the port for Render
 EXPOSE 8080
