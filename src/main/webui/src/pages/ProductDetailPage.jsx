@@ -104,7 +104,9 @@ export default function ProductDetailPage() {
             <h1 className="pd-title">{product.name}</h1>
             <div className="pd-rating">
               <span className="stars-small">
-                {'★'.repeat(Math.floor(product.rating))}{'☆'.repeat(5 - Math.floor(product.rating))}
+                {[1,2,3,4,5].map(s => (
+                  <i key={s} className={`fa-star ${s <= Math.round(product.rating) ? 'fas' : 'far'}`}></i>
+                ))}
               </span>
               <span className="rating-text">{product.rating} ({product.reviews.toLocaleString()} đánh giá)</span>
             </div>
@@ -130,15 +132,9 @@ export default function ProductDetailPage() {
                 <strong>MUA NGAY</strong>
                 <span>Giao tận nơi hoặc nhận tại cửa hàng</span>
               </button>
-              <div className="pd-btn-group">
-                <button className="btn-add-cart" onClick={() => addToCart(product.id)}>
-                  <i className="fas fa-cart-plus"></i> Thêm vào giỏ
-                </button>
-                <button className="btn-add-cart btn-installment">
-                  <strong>MUA TRẢ GÓP 0%</strong>
-                  <span>Duyệt hồ sơ 5 phút</span>
-                </button>
-              </div>
+              <button className="btn-add-cart" onClick={() => addToCart(product.id)}>
+                <i className="fas fa-cart-plus"></i> Thêm vào giỏ hàng
+              </button>
             </div>
           </div>
         </div>

@@ -48,7 +48,7 @@ export default function ProductCard({ product: p }) {
           <button 
             className={`btn-view ${isCompared ? 'compared' : ''}`} 
             title={isCompared ? "Đã thêm vào so sánh" : "Thêm vào so sánh"}
-            onClick={(e) => { e.stopPropagation(); toggleCompare(p.id); }}
+            onClick={(e) => { e.stopPropagation(); toggleCompare(p); }}
           >
             <i className="fas fa-scale-balanced"></i>
           </button>
