@@ -11,9 +11,17 @@ RUN apt-get update && apt-get install -y curl \
 COPY pom.xml .
 COPY src ./src
 
+# Docker build args - passed from Render's "Build & Deploy" settings
+ARG DB_JDBC_URL
+ARG DB_USERNAME
+ARG DB_PASSWORD
+
 # Build the application
-# -DskipTests: Skip tests during build to save time & memory on Render
-RUN mvn clean package -DskipTests
+# Pass datasource config at build time so Quarkus FastBoot bakes correct credentials
+RUN mvn clean package -DskipTests \
+    -Dquarkus.datasource.jdbc.url="${DB_JDBC_URL}" \
+    -Dquarkus.datasource.username="${DB_USERNAME}" \
+    -Dquarkus.datasource.password="${DB_PASSWORD}"
 
 # Stage 2: Run the application
 FROM eclipse-temurin:21-jre-jammy
@@ -32,9 +40,4 @@ ENV QUARKUS_HTTP_PORT=8080
 ENV PORT=8080
 
 # Run the Quarkus app
-# Pass datasource config as Java system properties (highest priority, bypasses env var resolution issues)
-CMD ["sh", "-c", "java \
-  -Dquarkus.datasource.jdbc.url=${QUARKUS_DATASOURCE_JDBC_URL} \
-  -Dquarkus.datasource.username=${QUARKUS_DATASOURCE_USERNAME} \
-  -Dquarkus.datasource.password=${QUARKUS_DATASOURCE_PASSWORD} \
-  -jar quarkus-run.jar"]
+CMD ["java", "-jar", "quarkus-run.jar"]
