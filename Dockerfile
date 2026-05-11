@@ -32,4 +32,9 @@ ENV QUARKUS_HTTP_PORT=8080
 ENV PORT=8080
 
 # Run the Quarkus app
-CMD ["java", "-jar", "quarkus-run.jar"]
+# Pass datasource config as Java system properties (highest priority, bypasses env var resolution issues)
+CMD ["sh", "-c", "java \
+  -Dquarkus.datasource.jdbc.url=${QUARKUS_DATASOURCE_JDBC_URL} \
+  -Dquarkus.datasource.username=${QUARKUS_DATASOURCE_USERNAME} \
+  -Dquarkus.datasource.password=${QUARKUS_DATASOURCE_PASSWORD} \
+  -jar quarkus-run.jar"]
