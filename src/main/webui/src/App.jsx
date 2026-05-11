@@ -7,7 +7,6 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartSidebar from './components/CartSidebar';
 import CompareBar from './components/CompareBar';
-import ChatWidget from './components/ChatWidget';
 import Toast from './components/Toast';
 import BackToTop from './components/BackToTop';
 import HomePage from './pages/HomePage';
@@ -75,7 +74,6 @@ function AppInner() {
           <Footer />
           <CartSidebar />
           <CompareBar />
-          <ChatWidget />
           <BackToTop />
         </>
       )}

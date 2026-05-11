@@ -26,7 +26,9 @@ export default function ProductCard({ product: p }) {
         <div className="product-name">{p.name}</div>
         <div className="product-rating">
           <span className="stars-small">
-            {'★'.repeat(Math.floor(p.rating))}{'☆'.repeat(5 - Math.floor(p.rating))}
+            {[1,2,3,4,5].map(s => (
+              <i key={s} className={`fa-star ${s <= Math.round(p.rating) ? 'fas' : 'far'}`}></i>
+            ))}
           </span>
           <span className="rating-count">({p.reviews.toLocaleString()})</span>
         </div>
