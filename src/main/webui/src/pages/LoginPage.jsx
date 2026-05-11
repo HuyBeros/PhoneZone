@@ -3,38 +3,42 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { useToast } from '../store/ToastContext';
 
+const FEATURES = [
+  { icon: 'fa-gift',          color: '#f0a500', bg: 'rgba(240,165,0,.15)',        text: 'Tích điểm đổi quà mỗi đơn hàng' },
+  { icon: 'fa-rocket',        color: '#0ea5e9', bg: 'rgba(14,165,233,.15)',        text: 'Giao hàng siêu tốc trong 2 giờ' },
+  { icon: 'fa-shield-halved', color: '#10b981', bg: 'rgba(16,185,129,.15)',        text: 'Bảo mật thông tin tuyệt đối' },
+  { icon: 'fa-headset',       color: '#a78bfa', bg: 'rgba(167,139,250,.15)',       text: 'Hỗ trợ 24/7 từ đội ngũ chuyên gia' },
+];
+
+const STATS = [
+  { icon: 'fa-box-open',   value: '50K+',  label: 'Sản phẩm' },
+  { icon: 'fa-users',      value: '200K+', label: 'Khách hàng' },
+  { icon: 'fa-star',       value: '4.9',   label: 'Đánh giá' },
+];
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, register, user } = useAuth();
   const { showToast } = useToast();
 
-  // Tab: 'login' | 'register'
   const [tab, setTab] = useState(location.state?.tab || 'login');
 
-  // Login form
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [showLoginPwd, setShowLoginPwd] = useState(false);
 
-  // Register form
-  const [regForm, setRegForm] = useState({
-    username: '', email: '', password: '', confirmPassword: '', fullName: '', phone: ''
-  });
+  const [regForm, setRegForm] = useState({ username: '', email: '', password: '', confirmPassword: '', fullName: '', phone: '' });
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState('');
   const [regSuccess, setRegSuccess] = useState(false);
   const [showRegPwd, setShowRegPwd] = useState(false);
   const [showRegConfirm, setShowRegConfirm] = useState(false);
 
-  // Redirect nếu đã đăng nhập
   const from = location.state?.from || '/';
-  useEffect(() => {
-    if (user) navigate(from, { replace: true });
-  }, [user]);
+  useEffect(() => { if (user) navigate(from, { replace: true }); }, [user]);
 
-  /* ── Handlers ── */
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
@@ -45,7 +49,7 @@ export default function LoginPage() {
     setLoginLoading(true);
     try {
       await login(loginForm.username.trim(), loginForm.password);
-      showToast('Đăng nhập thành công! Chào mừng bạn trở lại 👋');
+      showToast('Đăng nhập thành công! Chào mừng bạn trở lại.', 'success');
       navigate(from, { replace: true });
     } catch (err) {
       setLoginError(err.message || 'Sai tên đăng nhập hoặc mật khẩu.');
@@ -57,14 +61,11 @@ export default function LoginPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setRegError('');
-
-    // Validate
     if (!regForm.fullName.trim()) return setRegError('Vui lòng nhập họ tên.');
     if (regForm.username.trim().length < 3) return setRegError('Tên đăng nhập phải ít nhất 3 ký tự.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regForm.email)) return setRegError('Email không hợp lệ.');
     if (regForm.password.length < 6) return setRegError('Mật khẩu phải ít nhất 6 ký tự.');
     if (regForm.password !== regForm.confirmPassword) return setRegError('Mật khẩu xác nhận không khớp.');
-
     setRegLoading(true);
     try {
       await register({
@@ -75,7 +76,7 @@ export default function LoginPage() {
         phone: regForm.phone.trim() || undefined,
       });
       setRegSuccess(true);
-      showToast('Đăng ký thành công! Hãy đăng nhập để tiếp tục.');
+      showToast('Đăng ký thành công! Hãy đăng nhập để tiếp tục.', 'success');
       setTimeout(() => {
         setTab('login');
         setLoginForm({ username: regForm.username.trim(), password: '' });
@@ -89,65 +90,73 @@ export default function LoginPage() {
     }
   };
 
-  /* ── Password strength ── */
   const pwdStrength = (pwd) => {
     if (!pwd) return null;
-    let score = 0;
-    if (pwd.length >= 6) score++;
-    if (pwd.length >= 10) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    if (score <= 1) return { label: 'Yếu', color: '#ef4444', width: '25%' };
-    if (score <= 2) return { label: 'Trung bình', color: '#f59e0b', width: '50%' };
-    if (score <= 3) return { label: 'Khá', color: '#0ea5e9', width: '75%' };
-    return { label: 'Mạnh', color: '#16a34a', width: '100%' };
+    let s = 0;
+    if (pwd.length >= 6) s++;
+    if (pwd.length >= 10) s++;
+    if (/[A-Z]/.test(pwd)) s++;
+    if (/[0-9]/.test(pwd)) s++;
+    if (/[^A-Za-z0-9]/.test(pwd)) s++;
+    if (s <= 1) return { label: 'Yếu',      color: '#ef4444', width: '25%' };
+    if (s <= 2) return { label: 'Trung bình', color: '#f59e0b', width: '50%' };
+    if (s <= 3) return { label: 'Khá',       color: '#0ea5e9', width: '75%' };
+    return             { label: 'Mạnh',      color: '#16a34a', width: '100%' };
   };
   const strength = pwdStrength(regForm.password);
 
   return (
     <div className="auth-page">
-      {/* Background decoration */}
+      {/* Decorative background */}
       <div className="auth-bg">
         <div className="auth-bg-blob auth-bg-blob-1"></div>
         <div className="auth-bg-blob auth-bg-blob-2"></div>
       </div>
 
       <div className="auth-container">
-        {/* Left panel – branding */}
+        {/* ── LEFT PANEL ── */}
         <div className="auth-left">
-          <Link to="/" className="auth-logo">
-            📱 Phone<span>Zone</span>
-          </Link>
-          <h2 className="auth-left-title">
-            {tab === 'login' ? 'Chào mừng trở lại!' : 'Tham gia PhoneZone'}
-          </h2>
-          <p className="auth-left-sub">
-            {tab === 'login'
-              ? 'Đăng nhập để mua sắm, theo dõi đơn hàng và nhận ưu đãi độc quyền.'
-              : 'Tạo tài khoản miễn phí và nhận ngay 100 điểm thưởng chào mừng.'}
-          </p>
+          {/* Decorative rings */}
+          <div className="auth-ring auth-ring-1"></div>
+          <div className="auth-ring auth-ring-2"></div>
 
-          <div className="auth-features">
-            {[
-              { icon: '🎁', text: 'Tích điểm đổi quà mỗi đơn hàng' },
-              { icon: '🚀', text: 'Giao hàng nhanh trong 2 giờ' },
-              { icon: '🔒', text: 'Bảo mật thông tin tuyệt đối' },
-              { icon: '💬', text: 'Hỗ trợ 24/7 qua chat trực tuyến' },
-            ].map((f, i) => (
-              <div className="auth-feature-item" key={i}>
-                <span className="auth-feature-icon">{f.icon}</span>
-                <span>{f.text}</span>
-              </div>
-            ))}
+          <div className="auth-left-inner">
+            {/* Logo */}
+            <Link to="/" className="auth-logo">
+              <span className="auth-logo-icon"><i className="fas fa-mobile-screen-button"></i></span>
+              Phone<span>Zone</span>
+            </Link>
+
+            <h2 className="auth-left-title">
+              {tab === 'login' ? 'Chào mừng trở lại!' : 'Tham gia PhoneZone'}
+            </h2>
+            <p className="auth-left-sub">
+              {tab === 'login'
+                ? 'Đăng nhập để mua sắm, theo dõi đơn hàng và nhận ưu đãi độc quyền dành riêng cho bạn.'
+                : 'Tạo tài khoản miễn phí và nhận ngay 100 điểm thưởng chào mừng.'}
+            </p>
+
+            {/* Feature list */}
+            <div className="auth-features">
+              {FEATURES.map((f, i) => (
+                <div className="auth-feature-item" key={i}>
+                  <span className="auth-feature-icon" style={{ background: f.bg, color: f.color }}>
+                    <i className={`fas ${f.icon}`}></i>
+                  </span>
+                  <span>{f.text}</span>
+                </div>
+              ))}
+            </div>
+
+
+
+            <Link to="/" className="auth-back-home">
+              <i className="fas fa-arrow-left"></i> Về trang chủ
+            </Link>
           </div>
-
-          <Link to="/" className="auth-back-home">
-            <i className="fa fa-arrow-left"></i> Về trang chủ
-          </Link>
         </div>
 
-        {/* Right panel – form */}
+        {/* ── RIGHT PANEL ── */}
         <div className="auth-right">
           {/* Tabs */}
           <div className="auth-tabs">
@@ -155,13 +164,13 @@ export default function LoginPage() {
               className={`auth-tab${tab === 'login' ? ' active' : ''}`}
               onClick={() => { setTab('login'); setLoginError(''); }}
             >
-              <i className="fa fa-sign-in-alt"></i> Đăng nhập
+              <i className="fas fa-right-to-bracket"></i> Đăng nhập
             </button>
             <button
               className={`auth-tab${tab === 'register' ? ' active' : ''}`}
               onClick={() => { setTab('register'); setRegError(''); }}
             >
-              <i className="fa fa-user-plus"></i> Đăng ký
+              <i className="fas fa-user-plus"></i> Đăng ký
             </button>
           </div>
 
@@ -170,19 +179,22 @@ export default function LoginPage() {
             <form className="auth-form" onSubmit={handleLogin} noValidate>
               <div className="auth-form-header">
                 <h3>Đăng nhập tài khoản</h3>
-                <p>Nhập thông tin để tiếp tục mua sắm</p>
+                <p>Nhập thông tin của bạn để tiếp tục mua sắm</p>
               </div>
 
               {loginError && (
                 <div className="auth-alert auth-alert-error">
-                  <i className="fa fa-exclamation-circle"></i> {loginError}
+                  <i className="fas fa-circle-exclamation"></i>
+                  <span>{loginError}</span>
                 </div>
               )}
 
               <div className="auth-field">
-                <label htmlFor="login-username">Tên đăng nhập</label>
+                <label htmlFor="login-username">
+                  <i className="fas fa-user"></i> Tên đăng nhập
+                </label>
                 <div className="auth-input-wrap">
-                  <i className="fa fa-user auth-input-icon"></i>
+                  <i className="fas fa-user auth-input-icon"></i>
                   <input
                     id="login-username"
                     type="text"
@@ -196,9 +208,11 @@ export default function LoginPage() {
               </div>
 
               <div className="auth-field">
-                <label htmlFor="login-password">Mật khẩu</label>
+                <label htmlFor="login-password">
+                  <i className="fas fa-lock"></i> Mật khẩu
+                </label>
                 <div className="auth-input-wrap">
-                  <i className="fa fa-lock auth-input-icon"></i>
+                  <i className="fas fa-lock auth-input-icon"></i>
                   <input
                     id="login-password"
                     type={showLoginPwd ? 'text' : 'password'}
@@ -214,19 +228,15 @@ export default function LoginPage() {
                     tabIndex={-1}
                     aria-label={showLoginPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   >
-                    <i className={`fa ${showLoginPwd ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    <i className={`fas ${showLoginPwd ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="auth-submit-btn"
-                disabled={loginLoading}
-              >
+              <button type="submit" className="auth-submit-btn" disabled={loginLoading}>
                 {loginLoading
-                  ? <><i className="fa fa-spinner fa-spin"></i> Đang đăng nhập...</>
-                  : <><i className="fa fa-sign-in-alt"></i> Đăng nhập</>
+                  ? <><i className="fas fa-spinner fa-spin"></i> Đang đăng nhập...</>
+                  : <><i className="fas fa-right-to-bracket"></i> Đăng nhập</>
                 }
               </button>
 
@@ -244,25 +254,29 @@ export default function LoginPage() {
             <form className="auth-form" onSubmit={handleRegister} noValidate>
               <div className="auth-form-header">
                 <h3>Tạo tài khoản mới</h3>
-                <p>Điền thông tin bên dưới để bắt đầu</p>
+                <p>Điền thông tin bên dưới để bắt đầu hành trình mua sắm</p>
               </div>
 
               {regError && (
                 <div className="auth-alert auth-alert-error">
-                  <i className="fa fa-exclamation-circle"></i> {regError}
+                  <i className="fas fa-circle-exclamation"></i>
+                  <span>{regError}</span>
                 </div>
               )}
               {regSuccess && (
                 <div className="auth-alert auth-alert-success">
-                  <i className="fa fa-check-circle"></i> Đăng ký thành công! Đang chuyển sang đăng nhập...
+                  <i className="fas fa-circle-check"></i>
+                  <span>Đăng ký thành công! Đang chuyển sang đăng nhập...</span>
                 </div>
               )}
 
               <div className="auth-field-row">
                 <div className="auth-field">
-                  <label htmlFor="reg-fullname">Họ và tên <span className="auth-required">*</span></label>
+                  <label htmlFor="reg-fullname">
+                    <i className="fas fa-id-card"></i> Họ và tên <span className="auth-required">*</span>
+                  </label>
                   <div className="auth-input-wrap">
-                    <i className="fa fa-id-card auth-input-icon"></i>
+                    <i className="fas fa-id-card auth-input-icon"></i>
                     <input
                       id="reg-fullname"
                       type="text"
@@ -275,9 +289,11 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="auth-field">
-                  <label htmlFor="reg-phone">Số điện thoại</label>
+                  <label htmlFor="reg-phone">
+                    <i className="fas fa-phone"></i> Số điện thoại
+                  </label>
                   <div className="auth-input-wrap">
-                    <i className="fa fa-phone auth-input-icon"></i>
+                    <i className="fas fa-phone auth-input-icon"></i>
                     <input
                       id="reg-phone"
                       type="tel"
@@ -291,9 +307,11 @@ export default function LoginPage() {
               </div>
 
               <div className="auth-field">
-                <label htmlFor="reg-username">Tên đăng nhập <span className="auth-required">*</span></label>
+                <label htmlFor="reg-username">
+                  <i className="fas fa-user"></i> Tên đăng nhập <span className="auth-required">*</span>
+                </label>
                 <div className="auth-input-wrap">
-                  <i className="fa fa-user auth-input-icon"></i>
+                  <i className="fas fa-user auth-input-icon"></i>
                   <input
                     id="reg-username"
                     type="text"
@@ -306,9 +324,11 @@ export default function LoginPage() {
               </div>
 
               <div className="auth-field">
-                <label htmlFor="reg-email">Email <span className="auth-required">*</span></label>
+                <label htmlFor="reg-email">
+                  <i className="fas fa-envelope"></i> Email <span className="auth-required">*</span>
+                </label>
                 <div className="auth-input-wrap">
-                  <i className="fa fa-envelope auth-input-icon"></i>
+                  <i className="fas fa-envelope auth-input-icon"></i>
                   <input
                     id="reg-email"
                     type="email"
@@ -322,9 +342,11 @@ export default function LoginPage() {
 
               <div className="auth-field-row">
                 <div className="auth-field">
-                  <label htmlFor="reg-password">Mật khẩu <span className="auth-required">*</span></label>
+                  <label htmlFor="reg-password">
+                    <i className="fas fa-lock"></i> Mật khẩu <span className="auth-required">*</span>
+                  </label>
                   <div className="auth-input-wrap">
-                    <i className="fa fa-lock auth-input-icon"></i>
+                    <i className="fas fa-lock auth-input-icon"></i>
                     <input
                       id="reg-password"
                       type={showRegPwd ? 'text' : 'password'}
@@ -338,9 +360,8 @@ export default function LoginPage() {
                       className="auth-pwd-toggle"
                       onClick={() => setShowRegPwd(p => !p)}
                       tabIndex={-1}
-                      aria-label={showRegPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                     >
-                      <i className={`fa ${showRegPwd ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      <i className={`fas ${showRegPwd ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                     </button>
                   </div>
                   {strength && (
@@ -353,9 +374,11 @@ export default function LoginPage() {
                   )}
                 </div>
                 <div className="auth-field">
-                  <label htmlFor="reg-confirm">Xác nhận mật khẩu <span className="auth-required">*</span></label>
+                  <label htmlFor="reg-confirm">
+                    <i className="fas fa-lock"></i> Xác nhận mật khẩu <span className="auth-required">*</span>
+                  </label>
                   <div className="auth-input-wrap">
-                    <i className="fa fa-lock auth-input-icon"></i>
+                    <i className="fas fa-lock auth-input-icon"></i>
                     <input
                       id="reg-confirm"
                       type={showRegConfirm ? 'text' : 'password'}
@@ -369,14 +392,13 @@ export default function LoginPage() {
                       className="auth-pwd-toggle"
                       onClick={() => setShowRegConfirm(p => !p)}
                       tabIndex={-1}
-                      aria-label={showRegConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                     >
-                      <i className={`fa ${showRegConfirm ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      <i className={`fas ${showRegConfirm ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                     </button>
                   </div>
                   {regForm.confirmPassword && (
                     <div className={`auth-match-hint ${regForm.password === regForm.confirmPassword ? 'match' : 'no-match'}`}>
-                      <i className={`fa ${regForm.password === regForm.confirmPassword ? 'fa-check' : 'fa-times'}`}></i>
+                      <i className={`fas ${regForm.password === regForm.confirmPassword ? 'fa-circle-check' : 'fa-circle-xmark'}`}></i>
                       {regForm.password === regForm.confirmPassword ? ' Mật khẩu khớp' : ' Chưa khớp'}
                     </div>
                   )}
@@ -396,10 +418,10 @@ export default function LoginPage() {
                 disabled={regLoading || regSuccess}
               >
                 {regLoading
-                  ? <><i className="fa fa-spinner fa-spin"></i> Đang đăng ký...</>
+                  ? <><i className="fas fa-spinner fa-spin"></i> Đang đăng ký...</>
                   : regSuccess
-                    ? <><i className="fa fa-check"></i> Đăng ký thành công!</>
-                    : <><i className="fa fa-user-plus"></i> Tạo tài khoản</>
+                    ? <><i className="fas fa-circle-check"></i> Đăng ký thành công!</>
+                    : <><i className="fas fa-user-plus"></i> Tạo tài khoản</>
                 }
               </button>
 

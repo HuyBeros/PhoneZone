@@ -10,35 +10,32 @@ import { useToast } from '../store/ToastContext';
 const SLIDES = [
   {
     bgImage: '/quinoa/iphone17.png',
-    Image:'/quinoa/i1.png',
-    tag: '📱 Ra mắt 2025', title: 'iPhone 17 Pro', sub: 'Titanium Design · A19 Pro',
+    Image: '/quinoa/i1.png',
+    title: 'iPhone 17 Pro', sub: 'Titanium Design · A19 Pro',
     desc: 'Camera 48MP thế hệ mới với cảm biến lớn hơn, chip A19 Pro vượt trội, pin cả ngày. Trải nghiệm iOS 19 đỉnh cao.',
     price: '34.999.000đ', oldPrice: '35.990.000đ', badge: '-8%',
     trust: ['Hàng chính hãng VNA', 'Trả góp 0%', 'Giao trong 2h'],
     buyLink: '/brand/all?q=iPhone+17+Pro',
-    detailLink: '/brand/all?q=iPhone+17+Pro',
     searchKeyword: 'iPhone 17 Pro',
   },
   {
     bgImage: '/quinoa/mi17.png',
-    Image:'/quinoa/i2.png',
-    tag: '🇨🇳 Xiaomi Flagship 2025', title: 'Xiaomi 17 Pro Max', sub: 'Leica Summilux · HyperOS 2',
+    Image: '/quinoa/i2.png',
+    title: 'Xiaomi 17 Pro Max', sub: 'Leica Summilux · HyperOS 2',
     desc: 'Camera Leica Summilux 50MP zoom quang học 5x, sạc 120W siêu tốc, Snapdragon 8 Elite. Màn hình OLED 120Hz cong tràn viền.',
     price: '22.650.000đ', oldPrice: '24.950.000đ', badge: '-11%',
     trust: ['Chính hãng DGW', 'Tặng tai nghe Xiaomi', 'BH 18 tháng'],
     buyLink: '/brand/all?q=Xiaomi+17+Pro+Max',
-    detailLink: '/brand/all?q=Xiaomi+17+Pro+Max',
     searchKeyword: 'Xiaomi 17 Pro Max',
   },
   {
     bgImage: '/quinoa/vivo_x300_series_001.png',
-    Image:'/quinoa/i3.png',
-    tag: '🏆 vivo X-Series Pro', title: 'vivo X300 Pro', sub: 'ZEISS Telephoto · 200W Flash',
+    Image: '/quinoa/i3.png',
+    title: 'vivo X300 Pro', sub: 'ZEISS Telephoto · 200W Flash',
     desc: 'Camera ZEISS 200MP telephoto chuyên nghiệp, sạc 200W nhanh nhất phân khúc, màn hình AMOLED 144Hz cực mượt.',
     price: '19.995.000đ', oldPrice: '21.990.000đ', badge: '-10%',
     trust: ['Chính hãng vivo VN', 'Tặng ốp lưng', 'BH 12 tháng'],
     buyLink: '/brand/all?q=vivo+X300+Pro',
-    detailLink: '/brand/all?q=vivo+X300+Pro',
     searchKeyword: 'vivo X300 Pro',
   }
 ];
@@ -74,7 +71,6 @@ function HeroSlider() {
                 </div>
                 <div className="hero-btns">
                   <Link to={`/brand/all?q=${encodeURIComponent(s.searchKeyword)}`} className="btn btn-primary">Mua Ngay <i className="fas fa-arrow-right"></i></Link>
-                  <Link to={`/brand/all?q=${encodeURIComponent(s.searchKeyword)}`} className="btn btn-outline">Xem cấu hình</Link>
                 </div>
                 <div className="hero-trust">
                   {s.trust.map(t => (
@@ -85,8 +81,6 @@ function HeroSlider() {
               <div className="hero-image">
                 <div className="hero-img-wrap">
                   <img src={s.Image} alt={s.title} className="float-img" />
-                  {i === 0 && <div className="hero-badge-chip"> Bảo mật Face ID</div>}
-                  {i === 0 && <div className="hero-badge-rating"> 4.9 · 8,234 đánh giá</div>}
                 </div>
               </div>
             </div>
@@ -176,7 +170,6 @@ function WhySection() {
   const items = [
     { icon: 'fa-certificate', title: '100% Chính Hãng', desc: 'Tất cả sản phẩm nhập khẩu chính hãng, có hóa đơn VAT, tem bảo hành hãng.' },
     { icon: 'fa-truck-fast', title: 'Giao Hàng 2 Giờ', desc: 'Giao nhanh trong 2 giờ nội thành Hà Nội & TP.HCM. Miễn phí từ 300K.' },
-    { icon: 'fa-credit-card', title: 'Trả Góp 0%', desc: 'Hỗ trợ trả góp 0% lãi suất qua thẻ tín dụng và dịch vụ MPOS.' },
     { icon: 'fa-rotate-left', title: 'Đổi Trả 30 Ngày', desc: 'Không hài lòng? Đổi trả trong 30 ngày, hoàn tiền trong 24 giờ.' },
   ];
   return (
@@ -232,14 +225,14 @@ export default function HomePage() {
       .then(res => {
         const data = res?.data || res || [];
         const mapped = (Array.isArray(data) ? data : []).map(mapProduct);
-        
+
         // Chỉ lấy điện thoại
         const phones = mapped.filter(p => (p.brand || '').toLowerCase() !== 'máy tính bảng');
-        
+
         // Lọc lấy 1 máy đắt nhất cho mỗi hãng
         const seenBrands = new Set();
         const topPerBrand = [];
-        
+
         for (const p of phones) {
           const brand = (p.brand || 'Khác').toLowerCase();
           if (!seenBrands.has(brand)) {
@@ -248,7 +241,7 @@ export default function HomePage() {
             if (topPerBrand.length === 8) break; // Lấy tối đa 8 hãng
           }
         }
-        
+
         setFeaturedPhones(topPerBrand);
       })
       .catch(err => console.error(err));
