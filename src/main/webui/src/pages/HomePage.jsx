@@ -9,8 +9,8 @@ import { useToast } from '../store/ToastContext';
 /* ── Hero Slider ─────────────────────────────────────── */
 const SLIDES = [
   {
-    bgImage: '/quinoa/iphone17.png',
-    Image: '/quinoa/i1.png',
+    bgImage: '/iphone17.png',
+    Image: '/i1.png',
     title: 'iPhone 17 Pro', sub: 'Titanium Design · A19 Pro',
     desc: 'Camera 48MP thế hệ mới với cảm biến lớn hơn, chip A19 Pro vượt trội, pin cả ngày. Trải nghiệm iOS 19 đỉnh cao.',
     price: '34.999.000đ', oldPrice: '35.990.000đ', badge: '-8%',
@@ -19,8 +19,8 @@ const SLIDES = [
     searchKeyword: 'iPhone 17 Pro',
   },
   {
-    bgImage: '/quinoa/mi17.png',
-    Image: '/quinoa/i2.png',
+    bgImage: '/mi17.png',
+    Image: '/i2.png',
     title: 'Xiaomi 17 Pro Max', sub: 'Leica Summilux · HyperOS 2',
     desc: 'Camera Leica Summilux 50MP zoom quang học 5x, sạc 120W siêu tốc, Snapdragon 8 Elite. Màn hình OLED 120Hz cong tràn viền.',
     price: '22.650.000đ', oldPrice: '24.950.000đ', badge: '-11%',
@@ -29,8 +29,8 @@ const SLIDES = [
     searchKeyword: 'Xiaomi 17 Pro Max',
   },
   {
-    bgImage: '/quinoa/vivo_x300_series_001.png',
-    Image: '/quinoa/i3.png',
+    bgImage: '/vivo_x300_series_001.png',
+    Image: '/i3.png',
     title: 'vivo X300 Pro', sub: 'ZEISS Telephoto · 200W Flash',
     desc: 'Camera ZEISS 200MP telephoto chuyên nghiệp, sạc 200W nhanh nhất phân khúc, màn hình AMOLED 144Hz cực mượt.',
     price: '19.995.000đ', oldPrice: '21.990.000đ', badge: '-10%',
