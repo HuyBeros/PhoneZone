@@ -19,7 +19,7 @@ public class VNPayConfig {
     @ConfigProperty(name = "vnpay.payUrl", defaultValue = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html")
     String vnpPayUrl;
 
-    @ConfigProperty(name = "vnpay.returnUrl", defaultValue = "http://localhost:8080/api/payment/vnpay-return")
+    @ConfigProperty(name = "vnpay.returnUrl", defaultValue = "https://phonezone-app.onrender.com/api/payment/vnpay-return")
     String vnpReturnUrl;
 
     @ConfigProperty(name = "vnpay.tmnCode", defaultValue = "N3GP3Q81")
