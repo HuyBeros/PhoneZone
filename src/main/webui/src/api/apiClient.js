@@ -29,10 +29,13 @@ export async function fetchApi(endpoint, options = {}) {
         const data = await response.json().catch(() => null);
 
         if (response.status === 401) {
-            localStorage.removeItem('pz_token');
-            localStorage.removeItem('pz_user');
-            window.location.href = '/?login=true';
-            throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            // Không redirect nếu đang gọi auth endpoints (login/register)
+            if (!endpoint.startsWith('/auth')) {
+                localStorage.removeItem('pz_token');
+                localStorage.removeItem('pz_user');
+                window.location.href = '/?login=true';
+            }
+            throw new Error((data && data.error) || data?.message || 'Sai tên đăng nhập hoặc mật khẩu.');
         }
 
         if (!response.ok) {
