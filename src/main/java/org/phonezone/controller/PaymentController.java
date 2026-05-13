@@ -65,12 +65,12 @@ public class PaymentController {
                 }
                 
                 // Redirect back to frontend
-                return Response.seeOther(URI.create("http://localhost:5173/orders")).build();
+                return Response.seeOther(URI.create("https://phonezone-app.onrender.com/orders")).build();
             } catch (Exception e) {
-                return Response.seeOther(URI.create("http://localhost:5173/orders?error=invalid_order")).build();
+                return Response.seeOther(URI.create("https://phonezone-app.onrender.com/orders?error=invalid_order")).build();
             }
         } else {
-            return Response.seeOther(URI.create("http://localhost:5173/orders?error=invalid_signature")).build();
+            return Response.seeOther(URI.create("https://phonezone-app.onrender.com/orders?error=invalid_signature")).build();
         }
     }
 }
