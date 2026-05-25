@@ -53,5 +53,6 @@ public class Product extends PanacheEntity {
     // Quan hệ N-1 với Category (qua tên danh mục)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     public Category category;
 }

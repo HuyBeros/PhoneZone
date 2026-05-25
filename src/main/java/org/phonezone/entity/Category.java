@@ -18,5 +18,6 @@ public class Category extends PanacheEntity {
     public LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "category")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public List<Product> products;
 }

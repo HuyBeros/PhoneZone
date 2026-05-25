@@ -51,4 +51,14 @@ public class AdminProductController {
         }
         return Response.ok(Map.of("message", "Xóa sản phẩm thành công")).build();
     }
+
+    @POST
+    @Path("/bulk-delete")
+    public Response deleteProducts(java.util.List<Long> ids) {
+        long deletedCount = productService.deleteProducts(ids);
+        return Response.ok(Map.of(
+            "message", "Đã xóa thành công " + deletedCount + " sản phẩm",
+            "deletedCount", deletedCount
+        )).build();
+    }
 }

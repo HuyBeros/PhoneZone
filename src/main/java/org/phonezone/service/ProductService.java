@@ -120,4 +120,10 @@ public class ProductService {
     public boolean deleteProduct(Long id) {
         return Product.deleteById(id);
     }
+
+    @jakarta.transaction.Transactional
+    public long deleteProducts(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return 0;
+        return Product.delete("id in ?1", ids);
+    }
 }

@@ -226,8 +226,15 @@ export default function HomePage() {
         const data = res?.data || res || [];
         const mapped = (Array.isArray(data) ? data : []).map(mapProduct);
 
-        // Chỉ lấy điện thoại
-        const phones = mapped.filter(p => (p.brand || '').toLowerCase() !== 'máy tính bảng');
+        // Log để debug xem danhMuc có giá trị gì
+        const uniqueBrands = [...new Set(mapped.map(p => p.brand))];
+        console.log('Unique brands from DB:', uniqueBrands);
+
+        // Chỉ lấy điện thoại (loại bỏ máy tính bảng)
+        const phones = mapped.filter(p => {
+          const brand = (p.brand || '').toLowerCase();
+          return !brand.includes('máy tính bảng') && !brand.includes('tablet');
+        });
 
         // Lọc lấy 1 máy đắt nhất cho mỗi hãng
         const seenBrands = new Set();
@@ -247,7 +254,7 @@ export default function HomePage() {
       .catch(err => console.error(err));
 
     // Máy tính bảng nổi bật: lấy 8 máy tính bảng giá cao nhất
-    fetchApi('/products?brand=Máy tính bảng&size=8&sort=price-desc')
+    fetchApi(`/products?brand=${encodeURIComponent('Máy tính bảng')}&size=8&sort=price-desc`)
       .then(res => {
         const data = res?.data || res || [];
         setFeaturedTablets((Array.isArray(data) ? data : []).map(mapProduct).slice(0, 8));
