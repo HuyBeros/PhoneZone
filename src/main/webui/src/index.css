@@ -60,6 +60,9 @@ img{max-width:100%;display:block}
   content:'';position:absolute;top:7px;left:50%;transform:translateX(-50%);
   border:6px solid transparent;border-bottom-color:var(--border);border-top:none
 }
+.nav-dropdown::after{
+  content:'';position:absolute;top:-15px;left:0;right:0;height:15px;background:transparent
+}
 .nav-dropdown-wrap:hover .nav-dropdown{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
 
 /* Grid 2 cột cho brands */
@@ -131,6 +134,9 @@ img{max-width:100%;display:block}
   opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;
   transform:translateY(-6px);
   box-shadow:0 16px 48px rgba(29,110,245,.12)
+}
+.user-dropdown::before{
+  content:'';position:absolute;top:-15px;left:0;right:0;height:15px;background:transparent
 }
 .user-dropdown-wrap:hover .user-dropdown{opacity:1;pointer-events:all;transform:translateY(4px)}
 
@@ -279,7 +285,7 @@ img{max-width:100%;display:block}
 
 /* ── WHY ── */
 .why-section{padding:56px 0;border-top:1px solid var(--border)}
-.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 .why-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);transition:.3s}
 .why-card:hover{border-color:var(--primary);transform:translateY(-4px)}
 .why-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--primary),#0ea5e9);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;margin-bottom:14px}
@@ -386,7 +392,6 @@ img{max-width:100%;display:block}
 }
 @media(max-width:900px){
   .flash-grid{grid-template-columns:repeat(3,1fr)}
-  .why-grid{grid-template-columns:repeat(2,1fr)}
   .accessory-cats{grid-template-columns:repeat(2,1fr)}
   .footer-grid{grid-template-columns:1fr 1fr}
   .brand-dropdown{min-width:420px}
@@ -411,7 +416,7 @@ img{max-width:100%;display:block}
 @media(max-width:480px){
   .flash-grid{grid-template-columns:repeat(2,1fr)}
   .accessory-cats{grid-template-columns:repeat(2,1fr)}
-  .why-grid{grid-template-columns:1fr 1fr}
+  .why-grid{grid-template-columns:1fr;max-width:400px;margin:0 auto}
   .newsletter-form{flex-direction:column}
   .footer-grid{grid-template-columns:1fr}
   .products-grid{grid-template-columns:1fr 1fr}
