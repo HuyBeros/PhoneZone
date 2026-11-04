@@ -58,6 +58,10 @@ JWT_PUBLIC_KEY_LOCATION=/etc/secrets/publicKey.pem
 
 Giữ cặp khóa ổn định giữa các lần deploy để phiên đăng nhập không bị mất hiệu lực ngoài ý muốn. Khi chủ động thay khóa, người dùng cần đăng nhập lại. Docker image không đóng gói khóa từ máy local.
 
+Dockerfile giữ user `phonezone` không phải root và thêm nhóm `1000` để đọc Render Secret Files. Dùng `USER phonezone` để Docker giữ các nhóm bổ sung; khai báo `USER 10001:10001` sẽ bỏ các nhóm đó. Nếu thay Dockerfile, giữ quyền đọc Secret Files theo [hướng dẫn Render](https://render.com/docs/docker-secrets).
+
+Entrypoint của image kiểm tra các biến database/JWT bắt buộc và quyền đọc file khóa trước khi chạy Java. Khi thiếu cấu hình, log chỉ nêu tên biến và hướng xử lý, không in password, URL kết nối hoặc nội dung key. Dòng `[PhoneZone] Configuration preflight passed; starting Quarkus.` xác nhận các kiểm tra này đã qua; nó không xác nhận database kết nối được hoặc Flyway thành công.
+
 ## 4. Render Web Service
 
 Kết nối repository GitHub, chọn **Docker**, Dockerfile `./Dockerfile`, build context tại gốc repository. Giữ Docker build/start mặc định; không cần build frontend thành một Static Site riêng. Không cần khai báo Maven/npm Build Command trong Docker service.
@@ -129,8 +133,11 @@ Mã đã được kiểm thử local; các bước này vẫn cần chạy trên
 | Non-empty schema / Flyway baseline error | Phân biệt database mới và cũ; không bật baseline tùy tiện |
 | Schema validation failed | Schema cũ chưa khớp, migration còn thiếu hoặc sai database |
 | Login lỗi ký/verify JWT | Secret Files đúng cặp, tên file/đường dẫn, không dùng test key |
+| JWT file permission denied | User container thuộc nhóm 1000; không chỉ khai báo UID:GID làm mất nhóm bổ sung |
 | Admin không tồn tại | Bootstrap env, log khởi động, database đang kết nối |
 | Catalog trống | Chưa nhập dữ liệu; ứng dụng không tự nạp danh mục production |
 | Redis refused | Tắt cache hoặc cấp URI Redis riêng |
+
+Nếu deploy chỉ hiện `Exited with status 1` mà thiếu exception, mở trang **Logs** của dịch vụ và bỏ bộ lọc để xem runtime log. Có thể đặt tạm `QUARKUS_LOG_CONSOLE_ENABLED=true`, `QUARKUS_LOG_CONSOLE_LEVEL=INFO`, `QUARKUS_LOG_LEVEL=INFO` rồi deploy lại để lấy thông báo lỗi khởi động. Exit code 1 tự nó không xác định được lỗi JWT, database, Flyway hay tài nguyên; cần đọc exception trước khi đổi cấu hình liên quan.
 
 Tài liệu chính thức: [Render Docker](https://render.com/docs/docker), [Render Web Services](https://render.com/docs/web-services), [Render Environment/Secret Files](https://render.com/docs/configure-environment-variables), [Neon Java/JDBC](https://neon.com/docs/guides/java).

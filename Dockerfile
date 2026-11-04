@@ -28,17 +28,23 @@ RUN mvn clean package -B -ntp -DskipTests
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Create non-root user and group
-RUN groupadd --gid 10001 phonezone && useradd --uid 10001 --gid phonezone --no-create-home phonezone
+# Render runtime Secret Files are readable by group 1000.
+# Keep a dedicated application user and grant that supplementary group only.
+RUN groupadd --gid 10001 phonezone \
+    && (getent group 1000 > /dev/null || groupadd --gid 1000 render-secrets) \
+    && useradd --uid 10001 --gid phonezone --groups 1000 --no-create-home phonezone
 
 # Copy built Quarkus fast-jar artifacts
 COPY --from=build --chown=phonezone:phonezone /app/target/quarkus-app/lib/ /app/lib/
 COPY --from=build --chown=phonezone:phonezone /app/target/quarkus-app/*.jar /app/
 COPY --from=build --chown=phonezone:phonezone /app/target/quarkus-app/app/ /app/app/
 COPY --from=build --chown=phonezone:phonezone /app/target/quarkus-app/quarkus/ /app/quarkus/
+COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
 
 EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dfile.encoding=UTF-8"
-USER 10001:10001
+# Omitting an explicit group preserves the supplementary group memberships.
+USER phonezone
 
+ENTRYPOINT ["sh", "/app/docker-entrypoint.sh"]
 CMD ["java", "-jar", "quarkus-run.jar"]
