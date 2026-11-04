@@ -1,15 +1,13 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: phonezone-postgres
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-123456}
       POSTGRES_DB: phonezone_db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
@@ -18,7 +16,13 @@ services:
     image: redis:7-alpine
     container_name: phonezone-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
 volumes:

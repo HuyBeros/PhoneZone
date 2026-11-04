@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Optional;
 
 @ApplicationScoped
 public class VNPayConfig {
@@ -22,11 +23,11 @@ public class VNPayConfig {
     @ConfigProperty(name = "vnpay.returnUrl", defaultValue = "https://phonezone-app.onrender.com/api/payment/vnpay-return")
     String vnpReturnUrl;
 
-    @ConfigProperty(name = "vnpay.tmnCode", defaultValue = "N3GP3Q81")
-    String vnpTmnCode;
+    @ConfigProperty(name = "vnpay.tmnCode")
+    Optional<String> vnpTmnCode;
 
-    @ConfigProperty(name = "vnpay.secretKey", defaultValue = "A5ZK2ULBKQOEXM59KOR4WHSP6F03NLIR")
-    String secretKey;
+    @ConfigProperty(name = "vnpay.secretKey")
+    Optional<String> secretKey;
 
     @ConfigProperty(name = "vnpay.apiUrl", defaultValue = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction")
     String vnpApiUrl;
@@ -40,11 +41,15 @@ public class VNPayConfig {
     }
 
     public String getVnpTmnCode() {
-        return vnpTmnCode;
+        return vnpTmnCode.orElse("");
     }
 
     public String getSecretKey() {
-        return secretKey;
+        return secretKey.orElse("");
+    }
+
+    public boolean isConfigured() {
+        return !getVnpTmnCode().isBlank() && !getSecretKey().isBlank();
     }
 
     public String getVnpApiUrl() {

@@ -2,13 +2,15 @@ import { useCart } from '../store/CartContext';
 import { usePoints } from '../store/PointsContext';
 import { fmt } from '../utils/utils';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDrawer } from '../hooks/useDrawer';
 
 export default function CartSidebar() {
   const { cart, cartCount, cartTotal, cartOpen, closeCart, removeFromCart } = useCart();
   const { appliedCoupon, applyCoupon, removeCoupon, markCouponUsed, addPoints } = usePoints();
   const [couponInput, setCouponInput] = useState('');
   const navigate = useNavigate();
+  const drawerRef = useDrawer(cartOpen, closeCart);
 
   const discount    = appliedCoupon ? appliedCoupon.discountAmount || appliedCoupon.discount : 0;
   const finalTotal  = Math.max(0, cartTotal - discount);
@@ -33,10 +35,10 @@ export default function CartSidebar() {
         className={`cart-overlay${cartOpen ? ' active' : ''}`}
         onClick={closeCart}
       />
-      <aside className={`cart-sidebar${cartOpen ? ' active' : ''}`}>
+      <aside ref={drawerRef} className={`cart-sidebar${cartOpen ? ' active' : ''}`} role="dialog" aria-modal={cartOpen ? true : undefined} aria-label="Giỏ hàng" aria-hidden={!cartOpen} inert={!cartOpen ? '' : undefined} tabIndex={-1}>
         <div className="cart-header">
           <h3><i className="fas fa-cart-shopping"></i> Giỏ hàng ({cartCount})</h3>
-          <button className="close-cart" onClick={closeCart}>
+          <button type="button" className="close-cart" onClick={closeCart} aria-label="Đóng giỏ hàng">
             <i className="fas fa-xmark"></i>
           </button>
         </div>
@@ -55,7 +57,7 @@ export default function CartSidebar() {
                   <div className="cart-item-name">{item.name}</div>
                   <div className="cart-item-price">{fmt(item.price)} × {item.qty}</div>
                 </div>
-                <button className="cart-item-remove" onClick={() => removeFromCart(item.id)}>
+                <button className="cart-item-remove" onClick={() => removeFromCart(item.id)} aria-label={`Xóa ${item.name} khỏi giỏ hàng`}>
                   <i className="fas fa-trash-can"></i>
                 </button>
               </div>
@@ -83,7 +85,7 @@ export default function CartSidebar() {
                   </div>
                   <div className="coupon-hint">
                     <i className="fas fa-star"></i>
-                    <a href="#/rewards">Xem ví coupon của tôi</a>
+                    <Link to="/rewards" onClick={closeCart}>Xem ví coupon của tôi</Link>
                   </div>
                 </div>
               ) : (

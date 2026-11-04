@@ -108,7 +108,7 @@ export default function ProductDetailPage() {
                   <i key={s} className={`fa-star ${s <= Math.round(product.rating) ? 'fas' : 'far'}`}></i>
                 ))}
               </span>
-              <span className="rating-text">{product.rating} ({product.reviews.toLocaleString()} đánh giá)</span>
+              <span className="rating-text">{product.reviews > 0 ? `${product.rating} (${product.reviews.toLocaleString()} đánh giá)` : 'Chưa có đánh giá'}</span>
             </div>
 
             <div className="pd-price-box">
@@ -128,7 +128,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="pd-actions">
-              <button className="btn-buy-now" onClick={() => { addToCart(product.id); navigate('/checkout'); }}>
+              <button className="btn-buy-now" onClick={async () => { if (await addToCart(product.id)) navigate('/checkout'); }}>
                 <strong>MUA NGAY</strong>
                 <span>Giao tận nơi hoặc nhận tại cửa hàng</span>
               </button>

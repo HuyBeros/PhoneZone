@@ -1,6 +1,8 @@
 package org.phonezone.controller;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import org.phonezone.dto.ContactRequest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -15,7 +17,14 @@ public class ContactController {
 
     @POST
     @Transactional
-    public Response submitContact(ContactMessage message) {
+    public Response submitContact(@Valid ContactRequest request) {
+        ContactMessage message = new ContactMessage();
+        message.name = request.name;
+        message.email = request.email;
+        message.phone = request.phone;
+        message.service = request.service;
+        message.budget = request.budget;
+        message.message = request.message;
         if (message.name == null || message.email == null || message.message == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "Vui lòng điền đầy đủ thông tin bắt buộc"))

@@ -4,77 +4,77 @@ export const BRANDS = [
     "name": "iPhone",
     "emoji": "🍎",
     "color": "#555",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg"
+    "logo": "/brands/apple.svg"
   },
   {
     "id": "samsung",
     "name": "Samsung",
     "emoji": "🔵",
     "color": "#1428a0",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Samsung_wordmark.svg/500px-Samsung_wordmark.svg.png"
+    "logo": "/brands/samsung.svg"
   },
   {
     "id": "xiaomi",
     "name": "Xiaomi",
     "emoji": "🟠",
     "color": "#ff6900",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg"
+    "logo": "/brands/xiaomi.svg"
   },
   {
     "id": "redmi",
     "name": "Redmi",
     "emoji": "🔴",
     "color": "#e63946",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Xiaomi_Redmi_Logo.svg/500px-Xiaomi_Redmi_Logo.svg.png"
+    "logo": "/brands/redmi.svg"
   },
   {
     "id": "oppo",
     "name": "OPPO",
     "emoji": "🟢",
     "color": "#1d6339",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/OPPO_LOGO_2019.svg/3840px-OPPO_LOGO_2019.svg.png"
+    "logo": "/brands/oppo.svg"
   },
   {
     "id": "realme",
     "name": "Realme",
     "emoji": "🟡",
     "color": "#f5a623",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Realme_logo.png/500px-Realme_logo.png"
+    "logo": "/brands/realme.svg"
   },
   {
     "id": "vivo",
     "name": "Vivo",
     "emoji": "🔷",
     "color": "#415fff",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Vivo_logo_2019.svg/500px-Vivo_logo_2019.svg.png"
+    "logo": "/brands/vivo.svg"
   },
   {
     "id": "oneplus",
     "name": "OnePlus",
     "emoji": "🔴",
     "color": "#eb0029",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Logo_entreprise_OnePlus.png/960px-Logo_entreprise_OnePlus.png"
+    "logo": "/brands/oneplus.svg"
   },
   {
     "id": "honor",
     "name": "Honor",
     "emoji": "🩵",
     "color": "#007aff",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Honor_Logo_%282020%29.svg/500px-Honor_Logo_%282020%29.svg.png"
+    "logo": "/brands/honor.svg"
   },
   {
     "id": "nubia",
     "name": "Nubia Red Magic",
     "emoji": "🎮",
     "color": "#e63946",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Nubia_logo.svg/500px-Nubia_logo.svg.png"
+    "logo": "/brands/nubia.svg"
   },
   {
     "id": "meizu",
     "name": "Meizu",
     "emoji": "⚫",
     "color": "#333",
-    "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Meizu.svg/500px-Meizu.svg.png"
+    "logo": "/brands/meizu.svg"
   }
 ];
 

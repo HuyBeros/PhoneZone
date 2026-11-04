@@ -3,6 +3,7 @@ package org.phonezone.service;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.phonezone.entity.Product;
 
 import java.util.HashMap;
@@ -11,13 +12,36 @@ import java.util.Map;
 
 @ApplicationScoped
 public class ProductService {
+    @Inject ProductCatalogCache catalogCache;
+
+    static void validateQuery(Long minPrice, Long maxPrice, int page, int size) {
+        if (page < 0 || size < 1 || size > 200) throw new IllegalArgumentException("Trang phải >= 0 và số sản phẩm mỗi trang từ 1 đến 200");
+        if ((minPrice != null && minPrice < 0) || (maxPrice != null && maxPrice < 0)
+                || (minPrice != null && maxPrice != null && minPrice > maxPrice)) {
+            throw new IllegalArgumentException("Khoảng giá không hợp lệ");
+        }
+    }
+
+    static void validateSearchLimit(int limit) {
+        if (limit < 1 || limit > 50) throw new IllegalArgumentException("Giới hạn tìm kiếm từ 1 đến 50");
+    }
 
     /**
      * Lấy danh sách sản phẩm có lọc, sắp xếp, phân trang.
      */
     public Map<String, Object> getProducts(String brand, String category, Long minPrice, Long maxPrice, String sort, int page, int size) {
-        StringBuilder query = new StringBuilder("1=1");
+        return getProducts(brand, category, minPrice, maxPrice, sort, page, size, null, false);
+    }
+
+    public Map<String, Object> getProducts(String brand, String category, Long minPrice, Long maxPrice, String sort, int page, int size, String keyword, boolean admin) {
+        validateQuery(minPrice, maxPrice, page, size);
+        StringBuilder query = new StringBuilder(admin ? "1=1" : "isActive = true");
         Map<String, Object> params = new HashMap<>();
+
+        if (keyword != null && !keyword.isBlank()) {
+            query.append(" and (lower(tenSanPham) like :keyword or lower(danhMuc) like :keyword)");
+            params.put("keyword", "%" + keyword.trim().toLowerCase(java.util.Locale.ROOT) + "%");
+        }
 
         if (brand != null && !brand.isBlank()) {
             query.append(" and lower(danhMuc) like :brand");
@@ -65,15 +89,16 @@ public class ProductService {
      * Lấy chi tiết sản phẩm theo ID.
      */
     public Product getProductById(Long id) {
-        return Product.findById(id);
+        return Product.find("id = ?1 and isActive = true", id).firstResult();
     }
 
     /**
      * Tìm kiếm sản phẩm theo từ khóa.
      */
     public List<Product> searchProducts(String keyword, int limit) {
+        validateSearchLimit(limit);
         return Product
-                .find("lower(tenSanPham) like :kw",
+                .find("isActive = true and lower(tenSanPham) like :kw",
                       Sort.by("giaBanSo").ascending(),
                       Map.of("kw", "%" + keyword.toLowerCase() + "%"))
                 .page(Page.ofSize(limit))
@@ -85,7 +110,7 @@ public class ProductService {
      */
     public List<String> getAllBrands() {
         return Product.getEntityManager()
-                .createQuery("SELECT DISTINCT p.danhMuc FROM Product p WHERE p.danhMuc IS NOT NULL ORDER BY p.danhMuc", String.class)
+                .createQuery("SELECT DISTINCT p.danhMuc FROM Product p WHERE p.isActive = true AND p.danhMuc IS NOT NULL ORDER BY p.danhMuc", String.class)
                 .getResultList();
     }
 
@@ -94,6 +119,7 @@ public class ProductService {
     @jakarta.transaction.Transactional
     public Product createProduct(Product product) {
         product.persist();
+        catalogCache.invalidateAfterCommit();
         return product;
     }
 
@@ -112,18 +138,25 @@ public class ProductService {
         existing.stockQuantity = updatedProduct.stockQuantity;
         existing.isActive = updatedProduct.isActive;
 
+        // The admin response is serialized after this transaction closes.
+        org.hibernate.Hibernate.initialize(existing.category);
         existing.persist();
+        catalogCache.invalidateAfterCommit();
         return existing;
     }
 
     @jakarta.transaction.Transactional
     public boolean deleteProduct(Long id) {
-        return Product.deleteById(id);
+        boolean deleted = Product.deleteById(id);
+        if (deleted) catalogCache.invalidateAfterCommit();
+        return deleted;
     }
 
     @jakarta.transaction.Transactional
     public long deleteProducts(List<Long> ids) {
         if (ids == null || ids.isEmpty()) return 0;
-        return Product.delete("id in ?1", ids);
+        long deleted = Product.delete("id in ?1", ids);
+        if (deleted > 0) catalogCache.invalidateAfterCommit();
+        return deleted;
     }
 }

@@ -12,6 +12,38 @@ public class UserService {
     @Inject
     AuthService authService;
 
+    @Inject
+    @org.eclipse.microprofile.config.inject.ConfigProperty(name = "phonezone.demo-users.enabled")
+    boolean demoUsersEnabled;
+
+    /** Local demo accounts are never created by the production profile. */
+    @Transactional
+    public void onStart(@jakarta.enterprise.event.Observes io.quarkus.runtime.StartupEvent ev) {
+        if (!demoUsersEnabled) return;
+        if (User.count("role", "ROLE_ADMIN") == 0) {
+            User admin = new User();
+            admin.username = "admin";
+            admin.email = "admin@phonezone.vn";
+            admin.passwordHash = authService.hashPassword("admin123");
+            admin.fullName = "Quản Trị Viên";
+            admin.phone = "0988888888";
+            admin.role = "ROLE_ADMIN";
+            admin.rewardPoints = 9999;
+            admin.persist();
+        }
+        if (User.count("username", "customer") == 0) {
+            User customer = new User();
+            customer.username = "customer";
+            customer.email = "customer@phonezone.vn";
+            customer.passwordHash = authService.hashPassword("customer123");
+            customer.fullName = "Khách Hàng Trải Nghiệm";
+            customer.phone = "0977777777";
+            customer.role = "ROLE_USER";
+            customer.rewardPoints = 350;
+            customer.persist();
+        }
+    }
+
     /**
      * Lấy thông tin user theo username (từ JWT).
      */
@@ -39,7 +71,7 @@ public class UserService {
             user.address = request.address;
         }
         if (request.newPassword != null && !request.newPassword.isBlank()) {
-            user.passwordHash = authService.hashPassword(request.newPassword);
+            throw new jakarta.ws.rs.BadRequestException("Vui lòng dùng chức năng đổi mật khẩu và xác nhận mật khẩu hiện tại");
         }
 
         user.persist();
@@ -57,8 +89,7 @@ public class UserService {
         if (user == null) return null;
 
         // Xác thực mật khẩu hiện tại
-        String currentHash = authService.hashPassword(currentPassword);
-        if (!currentHash.equals(user.passwordHash)) {
+        if (!authService.verifyPassword(currentPassword, user.passwordHash)) {
             throw new IllegalArgumentException("Mật khẩu hiện tại không đúng");
         }
 
@@ -105,8 +136,10 @@ public class UserService {
         user.role     = dto.role != null ? dto.role : "ROLE_USER";
         user.rewardPoints = dto.rewardPoints != null ? dto.rewardPoints : 0;
 
-        String rawPassword = (dto.newPassword != null && !dto.newPassword.isBlank()) ? dto.newPassword : "123456";
-        user.passwordHash = authService.hashPassword(rawPassword);
+        if (dto.newPassword == null || dto.newPassword.isBlank()) {
+            throw new IllegalArgumentException("Vui lòng nhập mật khẩu cho tài khoản mới");
+        }
+        user.passwordHash = authService.hashPassword(dto.newPassword);
 
         user.persist();
         return user;

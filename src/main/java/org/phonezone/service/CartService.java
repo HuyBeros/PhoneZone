@@ -20,7 +20,7 @@ public class CartService {
 
     @Transactional
     public CartItem addToCart(String username, CartItemRequest request) {
-        User user = User.find("username", username).firstResult();
+        User user = User.find("username", username).withLock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE).firstResult();
         Product product = Product.findById(request.productId);
 
         if (user == null || product == null) {
@@ -31,12 +31,14 @@ public class CartService {
         CartItem existingItem = CartItem.find("user = ?1 and product = ?2", user, product).firstResult();
         
         if (existingItem != null) {
+            validateQuantity(product, (long) existingItem.quantity + request.quantity);
             existingItem.quantity += request.quantity;
             existingItem.persist();
             return existingItem;
         }
 
         CartItem newItem = new CartItem();
+        validateQuantity(product, request.quantity);
         newItem.user = user;
         newItem.product = product;
         newItem.quantity = request.quantity;
@@ -47,7 +49,7 @@ public class CartService {
 
     @Transactional
     public CartItem updateCartItemQuantity(String username, Long cartItemId, int newQuantity) {
-        User user = User.find("username", username).firstResult();
+        User user = User.find("username", username).withLock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE).firstResult();
         CartItem item = CartItem.findById(cartItemId);
 
         if (user == null || item == null || !item.user.id.equals(user.id)) {
@@ -59,6 +61,7 @@ public class CartService {
             return null;
         }
 
+        validateQuantity(item.product, newQuantity);
         item.quantity = newQuantity;
         item.persist();
         return item;
@@ -66,7 +69,7 @@ public class CartService {
 
     @Transactional
     public boolean removeCartItem(String username, Long cartItemId) {
-        User user = User.find("username", username).firstResult();
+        User user = User.find("username", username).withLock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE).firstResult();
         CartItem item = CartItem.findById(cartItemId);
 
         if (user == null || item == null || !item.user.id.equals(user.id)) {
@@ -79,9 +82,15 @@ public class CartService {
 
     @Transactional
     public void clearCart(String username) {
-        User user = User.find("username", username).firstResult();
+        User user = User.find("username", username).withLock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE).firstResult();
         if (user != null) {
             CartItem.delete("user", user);
+        }
+    }
+
+    private void validateQuantity(Product product, long quantity) {
+        if (!Boolean.TRUE.equals(product.isActive) || quantity < 1 || product.stockQuantity == null || quantity > product.stockQuantity) {
+            throw new IllegalArgumentException("Sản phẩm không còn bán hoặc số lượng vượt tồn kho");
         }
     }
 }

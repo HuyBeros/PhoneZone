@@ -1,11 +1,29 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../api/apiClient';
 import { fmt } from '../../utils/utils';
+import {
+  IoConstructOutline,
+  IoSearchOutline,
+  IoCloseOutline,
+  IoRefreshOutline,
+  IoTrashOutline,
+  IoCalendarOutline,
+  IoAlertCircleOutline
+} from 'react-icons/io5';
+
+const REPAIR_STATUS_MAP = {
+  PENDING: { label: 'Chờ xác nhận', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' },
+  CONFIRMED: { label: 'Đã xác nhận', color: '#1d6ef5', bg: 'rgba(29, 110, 245, 0.12)' },
+  IN_PROGRESS: { label: 'Đang sửa chữa', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' },
+  COMPLETED: { label: 'Hoàn thành', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' },
+  CANCELLED: { label: 'Đã hủy lịch', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' },
+};
 
 export default function AdminRepairs() {
   const [repairs, setRepairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const loadRepairs = async () => {
     setLoading(true);
@@ -13,6 +31,8 @@ export default function AdminRepairs() {
       const data = await fetchApi('/repairs/admin/all?size=100');
       if (data && data.repairs) {
         setRepairs(data.repairs);
+      } else if (Array.isArray(data)) {
+        setRepairs(data);
       }
     } catch (err) {
       console.error(err);
@@ -26,7 +46,6 @@ export default function AdminRepairs() {
   }, []);
 
   const updateStatus = async (id, newStatus) => {
-    if (!window.confirm(`Chuyển trạng thái sang ${newStatus}?`)) return;
     try {
       await fetchApi(`/repairs/${id}/status`, {
         method: 'PUT',
@@ -34,108 +53,205 @@ export default function AdminRepairs() {
       });
       loadRepairs();
     } catch (e) {
-      alert(e.message);
+      alert(e.message || 'Cập nhật trạng thái sửa chữa thất bại');
     }
   };
 
   const deleteRepair = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa yêu cầu này?')) return;
+    if (!window.confirm('Bạn có chắc chắn muốn xóa yêu cầu sửa chữa này?')) return;
     try {
       await fetchApi(`/repairs/${id}`, { method: 'DELETE' });
       loadRepairs();
     } catch (e) {
-      alert(e.message);
+      alert(e.message || 'Xóa thất bại');
     }
   };
 
-  const filtered = repairs.filter(r =>
-    r.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.customerPhone?.includes(searchTerm)
-  );
+  const filtered = repairs.filter(r => {
+    const matchStatus = statusFilter === 'ALL' || r.status === statusFilter;
+    const term = searchTerm.toLowerCase().trim();
+    const matchSearch = term === '' ||
+      (r.customerName && r.customerName.toLowerCase().includes(term)) ||
+      (r.customerPhone && r.customerPhone.includes(term)) ||
+      (r.deviceModel && r.deviceModel.toLowerCase().includes(term)) ||
+      (r.repairService && r.repairService.toLowerCase().includes(term));
+    return matchStatus && matchSearch;
+  });
 
   return (
-    <div>
+    <div className="admin-repairs-page">
+      {/* ── HEADER ── */}
       <div className="dash-page-header">
         <div>
           <h1 className="dash-title">Quản Lý Lịch Sửa Chữa</h1>
-          <p className="dash-subtitle">Xác nhận, theo dõi và hủy lịch hẹn sửa chữa thiết bị</p>
+          <p className="dash-subtitle">Tiếp nhận yêu cầu, cập nhật tiến độ kỹ thuật và lịch hẹn khách hàng</p>
         </div>
+        <button
+          type="button"
+          className="admin-btn-secondary"
+          onClick={loadRepairs}
+          title="Làm mới"
+        >
+          <IoRefreshOutline style={{ fontSize: '1.1rem' }} />
+          <span>Làm mới</span>
+        </button>
       </div>
 
       <div className="admin-card">
-        <div style={{padding: '16px', borderBottom: '1px solid var(--admin-border)'}}>
-          <input
-            type="text"
-            placeholder="Tìm tên khách hàng, số điện thoại..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{padding: '10px', width: '300px', borderRadius: '8px', border: '1px solid var(--admin-border)'}}
-          />
+        {/* Filter bar */}
+        <div className="admin-table-filter-bar">
+          <div className="admin-filter-search-box">
+            <IoSearchOutline className="filter-search-icon" />
+            <input
+              type="text"
+              placeholder="Tìm theo Tên khách, SĐT, Dòng máy, Dịch vụ..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                className="filter-clear-btn"
+                onClick={() => setSearchTerm('')}
+              >
+                <IoCloseOutline />
+              </button>
+            )}
+          </div>
+
+          <div className="admin-filter-select-box">
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">Tất cả trạng thái sửa chữa</option>
+              <option value="PENDING">Chờ xác nhận</option>
+              <option value="CONFIRMED">Đã xác nhận</option>
+              <option value="IN_PROGRESS">Đang sửa chữa</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy lịch</option>
+            </select>
+          </div>
+
+          {(searchTerm || statusFilter !== 'ALL') && (
+            <button
+              type="button"
+              onClick={() => { setSearchTerm(''); setStatusFilter('ALL'); }}
+              className="admin-filter-reset-pill"
+            >
+              <IoCloseOutline style={{ fontSize: '1.1rem' }} />
+              <span>Xóa lọc</span>
+            </button>
+          )}
+
+          <div className="admin-table-count">
+            Hiển thị <strong>{filtered.length}</strong> / {repairs.length} lịch hẹn
+          </div>
         </div>
 
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Khách Hàng</th>
-              <th>Thiết Bị</th>
-              <th>Dịch Vụ</th>
-              <th>Chi Phí (Dự kiến)</th>
-              <th>Trạng Thái</th>
-              <th>Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(r => (
-              <tr key={r.id}>
-                <td>#{r.id}</td>
-                <td>
-                  <div style={{fontWeight: 'bold'}}>{r.customerName}</div>
-                  <div style={{fontSize: '0.85rem', color: '#666'}}>{r.customerPhone}</div>
-                </td>
-                <td>
-                  <div>{r.deviceType} - {r.deviceModel}</div>
-                  <div style={{fontSize: '0.85rem', color: '#eab308'}}>{r.issueDescription}</div>
-                </td>
-                <td>{r.repairService}</td>
-                <td style={{color: 'red', fontWeight: 'bold'}}>{r.estimatedCost ? fmt(r.estimatedCost) : 'Chưa báo giá'}</td>
-                <td>
-                  <span className={`status-badge ${r.status}`}>
-                    {r.status === 'PENDING' ? 'Chờ xác nhận' :
-                     r.status === 'CONFIRMED' ? 'Đã xác nhận' :
-                     r.status === 'IN_PROGRESS' ? 'Đang sửa' :
-                     r.status === 'COMPLETED' ? 'Hoàn thành' : 'Đã hủy'}
-                  </span>
-                </td>
-                <td>
-                  <div style={{display: 'flex', gap: '5px', alignItems: 'center'}}>
-                    {r.status === 'PENDING' && (
-                      <button onClick={() => updateStatus(r.id, 'CONFIRMED')} style={{padding: '5px 10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem'}}>
-                        <i className="fas fa-check"></i> Xác nhận
-                      </button>
-                    )}
-                    {(r.status === 'CONFIRMED' || r.status === 'IN_PROGRESS') && (
-                      <button onClick={() => updateStatus(r.id, 'COMPLETED')} style={{padding: '5px 10px', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem'}}>
-                        <i className="fas fa-check-circle"></i> Hoàn thành
-                      </button>
-                    )}
-                    {(r.status !== 'CANCELLED' && r.status !== 'COMPLETED') && (
-                      <button onClick={() => updateStatus(r.id, 'CANCELLED')} style={{padding: '5px 10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem'}}>
-                        Hủy
-                      </button>
-                    )}
-                    <button onClick={() => deleteRepair(r.id)} style={{color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: '5px', marginLeft: '5px'}} title="Xóa">
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan="7" style={{textAlign: 'center', padding: '20px'}}>Không có lịch sửa chữa nào</td></tr>
-            )}
-          </tbody>
-        </table>
+        {/* Table */}
+        {loading ? (
+          <div className="dash-loading-screen">
+            <div className="dash-spinner"></div>
+            <span>Đang tải danh sách lịch sửa chữa...</span>
+          </div>
+        ) : (
+          <div className="admin-table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã Phiếu</th>
+                  <th>Khách Hàng</th>
+                  <th>Thiết Bị &amp; Lỗi</th>
+                  <th>Dịch Vụ Sửa</th>
+                  <th>Chi Phí (Dự kiến)</th>
+                  <th>Trạng Thái</th>
+                  <th style={{ textAlign: 'center' }}>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(r => {
+                  const st = REPAIR_STATUS_MAP[r.status] || { label: r.status, color: '#64748b', bg: '#f1f5f9' };
+                  const isUrgent = r.priority === 'URGENT';
+                  return (
+                    <tr key={r.id}>
+                      <td>
+                        <span className="order-id-badge">#{r.id}</span>
+                        {isUrgent && (
+                          <div className="priority-urgent-pill">
+                            <IoAlertCircleOutline /> GẤP
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <div className="customer-cell-name">{r.customerName}</div>
+                        <div className="customer-cell-phone">{r.customerPhone}</div>
+                        {r.appointmentDate && (
+                          <div className="order-time-text" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            <IoCalendarOutline />
+                            Hẹn: {new Date(r.appointmentDate).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--admin-text-main)' }}>
+                          {r.deviceModel || r.deviceType}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: '240px', marginTop: '2px' }} title={r.issueDescription}>
+                          {r.issueDescription}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="repair-service-pill">
+                          <IoConstructOutline style={{ marginRight: '4px' }} />
+                          {r.repairService}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="order-amount-text">
+                          {r.estimatedCost ? fmt(r.estimatedCost) : 'Báo giá sau kiểm tra'}
+                        </span>
+                      </td>
+                      <td>
+                        <select
+                          value={r.status}
+                          onChange={(e) => updateStatus(r.id, e.target.value)}
+                          className="admin-status-select"
+                          style={{ color: st.color, backgroundColor: st.bg, borderColor: st.color }}
+                        >
+                          <option value="PENDING">Chờ xác nhận</option>
+                          <option value="CONFIRMED">Đã xác nhận</option>
+                          <option value="IN_PROGRESS">Đang sửa chữa</option>
+                          <option value="COMPLETED">Hoàn thành</option>
+                          <option value="CANCELLED">Hủy lịch hẹn</option>
+                        </select>
+                      </td>
+                      <td>
+                        <div className="admin-actions-cell" style={{ justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            className="admin-action-btn danger"
+                            onClick={() => deleteRepair(r.id)}
+                            title="Xóa phiếu sửa chữa"
+                          >
+                            <IoTrashOutline />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--admin-text-muted)' }}>
+                      Không tìm thấy lịch hẹn sửa chữa nào.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

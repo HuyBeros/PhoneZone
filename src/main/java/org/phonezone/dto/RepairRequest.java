@@ -1,15 +1,16 @@
 package org.phonezone.dto;
 
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.*;
 
 public class RepairRequest {
-    public String customerName;
-    public String customerPhone;
-    public String customerEmail;
-    public String deviceType;
-    public String deviceModel;
-    public String issueDescription;
-    public String repairService;
-    public String priority;
-    public LocalDateTime appointmentDate;
+    @NotBlank @Size(max = 100) public String customerName;
+    @NotBlank @Size(max = 20) public String customerPhone;
+    @Email @Size(max = 100) public String customerEmail;
+    @NotBlank @Size(max = 100) public String deviceType;
+    @NotBlank @Size(max = 100) public String deviceModel;
+    @NotBlank @Size(max = 1000) public String issueDescription;
+    @NotBlank @Size(max = 100) public String repairService;
+    @Pattern(regexp = "NORMAL|URGENT") public String priority;
+    @Future public LocalDateTime appointmentDate;
 }

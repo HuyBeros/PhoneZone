@@ -15,7 +15,6 @@ import org.phonezone.service.UserService;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Path("/api/admin/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -58,8 +57,9 @@ public class AdminUserController {
                         .entity(Map.of("error", "Username hoặc Email đã tồn tại"))
                         .build();
             }
+            org.jboss.logging.Logger.getLogger(AdminUserController.class).error("Cannot create user", e);
             return Response.status(500)
-                    .entity(Map.of("error", "Lỗi hệ thống: " + e.getMessage()))
+                    .entity(Map.of("error", "Không thể tạo tài khoản. Vui lòng thử lại sau."))
                     .build();
         }
     }
@@ -84,7 +84,8 @@ public class AdminUserController {
                         .entity(Map.of("error", "Email đã được sử dụng bởi tài khoản khác"))
                         .build();
             }
-            return Response.status(500).entity(Map.of("error", "Lỗi hệ thống: " + e.getMessage())).build();
+            org.jboss.logging.Logger.getLogger(AdminUserController.class).error("Cannot update user", e);
+            return Response.status(500).entity(Map.of("error", "Không thể cập nhật tài khoản. Vui lòng thử lại sau.")).build();
         }
     }
 

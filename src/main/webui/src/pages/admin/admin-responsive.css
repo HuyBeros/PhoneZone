@@ -1,0 +1,72 @@
+/* Contain wide tables within their own scroll region, including at desktop zoom. */
+.admin-layout { width: 100%; height: 100dvh; }
+.admin-main { min-width: 0; height: 100dvh; }
+.admin-content { min-width: 0; min-height: 0; overscroll-behavior: contain; }
+.admin-topbar { gap: 16px; flex-shrink: 0; }
+.admin-search { min-width: 0; flex: 0 1 340px; }
+.admin-topbar-actions { min-width: 0; }
+.admin-table-responsive { max-width: 100%; overscroll-behavior-x: contain; }
+.admin-table { min-width: 680px; }
+.admin-card, .dash-card, .dash-main-grid > *, .dash-bottom-grid > * { min-width: 0; }
+.admin-menu-toggle, .admin-menu-close { display: none; }
+.admin-modal { max-height: calc(100dvh - 40px); }
+.admin-modal-header { gap: 12px; }
+.admin-modal-header > div { min-width: 0; }
+.admin-modal-close { flex-shrink: 0; }
+
+@media (max-width: 1200px) {
+  .admin-topbar-greeting { display: none; }
+  .admin-topbar { padding: 12px 20px; }
+  .admin-content { padding: 20px; }
+}
+
+@media (max-width: 1024px) {
+  .admin-sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, calc(100% - 32px)); z-index: 1101; transform: translateX(-100%); visibility: hidden; transition: transform .25s, visibility .25s; padding-bottom: env(safe-area-inset-bottom); }
+  .admin-sidebar.is-open { transform: translateX(0); visibility: visible; }
+  .admin-menu-backdrop { position: fixed; inset: 0; background: #0f172a99; z-index: 1100; }
+  .admin-menu-toggle, .admin-menu-close { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--admin-border); border-radius: 10px; background: #fff; color: var(--admin-primary); font-size: 1.5rem; flex-shrink: 0; cursor: pointer; }
+  .admin-logo-container { position: relative; padding-right: 60px; }
+  .admin-menu-close { position: absolute; right: 10px; top: 20px; background: var(--admin-sidebar-surface); color: #fff; border-color: var(--admin-sidebar-border); }
+  .admin-logo-text-group { flex-wrap: wrap; }
+  .admin-search { flex: 1; }
+  .admin-topbar-actions { margin-left: auto; gap: 8px; }
+}
+
+@media (max-width: 600px) {
+  .admin-topbar { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+  .admin-search { order: 3; flex-basis: 100%; width: 100%; }
+  .admin-search input { font-size: 16px; min-height: 44px; }
+  .admin-store-link, .admin-logout-btn { min-height: 44px; padding: 8px 10px; }
+  .admin-store-link { min-width: 44px; justify-content: center; }
+  .admin-store-link span { display: none; }
+  .card-header-clean { flex-wrap: wrap; gap: 12px; }
+  .chart-controls-group { flex-wrap: wrap; gap: 8px; }
+  .chart-toggle-btn, .chart-period-btn, .admin-action-btn { min-height: 44px; min-width: 44px; }
+  .admin-content { padding: 16px 12px 32px; }
+  .dash-title { font-size: 1.3rem; overflow-wrap: anywhere; }
+  .dash-page-header { gap: 12px; }
+  .dash-stats-grid { grid-template-columns: minmax(0, 1fr); }
+  .admin-table-filter-bar { padding: 12px; gap: 10px; }
+  .admin-filter-search-box { min-width: 0; flex-basis: 100%; }
+  .admin-filter-select-box { min-width: 0; flex: 1 1 120px; }
+  .admin-filter-select-box select { width: 100%; }
+  .admin-layout input, .admin-layout select, .admin-layout textarea { min-width: 0; font-size: 16px; }
+  .admin-layout .form-group input, .admin-layout .form-group select, .admin-layout .form-group textarea { font-size: 16px; }
+  .admin-filter-search-box input, .admin-filter-select-box select { min-height: 44px; }
+  .admin-table-count { margin-left: 0; width: 100%; white-space: normal; }
+  .admin-pagination { flex-wrap: wrap; padding: 12px; gap: 8px; }
+  .admin-pagination-btn { min-height: 44px; padding: 8px 12px; }
+  .admin-modal-overlay { padding: 12px; }
+  .admin-modal { max-height: calc(100dvh - 24px); }
+  .admin-modal-header, .admin-modal-body, .admin-modal-footer { padding: 16px; }
+  .admin-modal-header { align-items: flex-start; }
+  .admin-modal-header h2 { overflow-wrap: anywhere; }
+  .admin-modal-footer { flex-wrap: wrap; gap: 8px; }
+  .admin-modal-footer button { flex: 1 1 120px; min-height: 44px; }
+  .admin-modal-close, .admin-profile-logout { width: 44px; height: 44px; }
+  .form-group-grid, .order-detail-meta-box { grid-template-columns: minmax(0, 1fr); }
+  .order-detail-meta-box .detail-meta-item { grid-column: 1 / -1 !important; min-width: 0; overflow-wrap: anywhere; }
+  .dash-card-header { flex-wrap: wrap; gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .admin-sidebar { transition: none; } }

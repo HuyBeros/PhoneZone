@@ -3,6 +3,7 @@ package org.phonezone.controller;
 import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -48,7 +49,7 @@ public class RepairController {
     // Tạo yêu cầu sửa chữa mới (cho cả guest và user đã đăng nhập)
     @POST
     @PermitAll
-    public Response createRepair(RepairRequest request, @Context SecurityContext securityContext) {
+    public Response createRepair(@Valid RepairRequest request, @Context SecurityContext securityContext) {
         User user = null;
         
         // Nếu user đã đăng nhập, lấy thông tin user
@@ -88,8 +89,8 @@ public class RepairController {
     // Lấy chi tiết 1 yêu cầu sửa chữa
     @GET
     @Path("/{id}")
-    @PermitAll
-    public Response getRepairById(@PathParam("id") Long id) {
+    @Authenticated
+    public Response getRepairById(@PathParam("id") Long id, @Context SecurityContext securityContext) {
         Repair repair = repairService.getRepairById(id);
         
         if (repair == null) {
@@ -98,6 +99,10 @@ public class RepairController {
                     .build();
         }
         
+        boolean owner = repair.user != null && repair.user.username.equals(securityContext.getUserPrincipal().getName());
+        if (!owner && !securityContext.isUserInRole("ROLE_ADMIN")) {
+            return Response.status(Response.Status.NOT_FOUND).entity(Map.of("error", "Repair not found")).build();
+        }
         return Response.ok(RepairResponse.from(repair)).build();
     }
 
@@ -148,7 +153,7 @@ public class RepairController {
         String username = securityContext.getUserPrincipal().getName();
         User currentUser = User.find("username", username).firstResult();
         
-        boolean isOwner = repair.user != null && repair.user.id.equals(currentUser.id);
+        boolean isOwner = currentUser != null && repair.user != null && repair.user.id.equals(currentUser.id);
         boolean isAdmin = securityContext.isUserInRole("ROLE_ADMIN");
         
         if (!isOwner && !isAdmin) {

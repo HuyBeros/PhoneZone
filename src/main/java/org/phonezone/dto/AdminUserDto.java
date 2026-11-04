@@ -23,6 +23,7 @@ public class AdminUserDto {
     public String address;
 
     @NotBlank(message = "Role không được để trống")
+    @Pattern(regexp = "ROLE_USER|ROLE_ADMIN", message = "Vai trò không hợp lệ")
     public String role;
 
     public Integer rewardPoints;

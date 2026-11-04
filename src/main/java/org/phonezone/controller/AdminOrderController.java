@@ -1,6 +1,5 @@
 package org.phonezone.controller;
 
-import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;

@@ -1,9 +1,22 @@
+import { fetchAllAdminProducts } from '../../api/adminProducts';
 import { useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '../../api/apiClient';
 import { fmt } from '../../utils/utils';
+import {
+  IoAddOutline,
+  IoSearchOutline,
+  IoCloseOutline,
+  IoCreateOutline,
+  IoTrashOutline,
+  IoRefreshOutline,
+  IoChevronBackOutline,
+  IoChevronForwardOutline,
+  IoPhonePortraitOutline,
+  IoCheckmarkCircleOutline
+} from 'react-icons/io5';
 
 export default function AdminProducts() {
-  const [allProducts, setAllProducts] = useState([]); // Tất cả sản phẩm
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -29,11 +42,10 @@ export default function AdminProducts() {
     isActive: true
   });
 
-  // Load TẤT CẢ sản phẩm một lần (admin không cần pagination phía server)
   const loadProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchApi('/products?page=0&size=2000&sort=default');
+      const res = await fetchAllAdminProducts();
       if (res && res.data) {
         setAllProducts(res.data);
       } else if (Array.isArray(res)) {
@@ -50,15 +62,12 @@ export default function AdminProducts() {
     loadProducts();
   }, [loadProducts]);
 
-  // Reset về trang 0 mỗi khi filter thay đổi
   useEffect(() => {
     setPage(0);
   }, [keyword, statusFilter, categoryFilter]);
 
-  // Lấy danh sách categories từ TẤT CẢ sản phẩm
   const categories = Array.from(new Set(allProducts.map(p => p.danhMuc).filter(Boolean))).sort();
 
-  // Lọc sản phẩm theo keyword + status + category
   const filteredProducts = allProducts.filter(p => {
     const kw = keyword.trim().toLowerCase();
     const matchKeyword = kw === '' ||
@@ -75,13 +84,19 @@ export default function AdminProducts() {
     return matchKeyword && matchStatus && matchCategory;
   });
 
-  // Pagination trên kết quả đã lọc
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const paginatedProducts = filteredProducts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const openAddModal = () => {
     setFormData({
-      id: null, tenSanPham: '', giaBanSo: 0, giaGocSo: 0, hinhAnh: '', danhMuc: '', stockQuantity: 100, isActive: true
+      id: null,
+      tenSanPham: '',
+      giaBanSo: 0,
+      giaGocSo: 0,
+      hinhAnh: '',
+      danhMuc: '',
+      stockQuantity: 100,
+      isActive: true
     });
     setErrorMsg('');
     setIsEditMode(false);
@@ -96,7 +111,7 @@ export default function AdminProducts() {
       giaGocSo: p.giaGocSo || 0,
       hinhAnh: p.hinhAnh || '',
       danhMuc: p.danhMuc || '',
-      stockQuantity: p.stockQuantity || 0,
+      stockQuantity: p.stockQuantity ?? 100,
       isActive: p.isActive !== false
     });
     setErrorMsg('');
@@ -130,12 +145,12 @@ export default function AdminProducts() {
       setIsModalOpen(false);
       loadProducts();
     } catch (err) {
-      setErrorMsg(err.message || 'Có lỗi xảy ra');
+      setErrorMsg(err.message || 'Có lỗi xảy ra khi lưu sản phẩm');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi PhoneZone?')) {
       try {
         await fetchApi(`/admin/products/${id}`, { method: 'DELETE' });
         loadProducts();
@@ -155,178 +170,322 @@ export default function AdminProducts() {
   const hasActiveFilter = keyword || statusFilter !== 'ALL' || categoryFilter !== 'ALL';
 
   return (
-    <div>
+    <div className="admin-products-page">
+      {/* ── HEADER ── */}
       <div className="dash-page-header">
         <div>
           <h1 className="dash-title">Quản Lý Sản Phẩm</h1>
-          <p className="dash-subtitle">Xem, thêm, sửa, xóa sản phẩm điện thoại &amp; máy tính bảng</p>
+          <p className="dash-subtitle">Xem, thêm mới, điều chỉnh giá và cập nhật tồn kho sản phẩm PhoneZone</p>
         </div>
-        <button className="dash-view-all-btn" onClick={openAddModal}>
-          <i className="fas fa-plus"></i> Thêm Sản Phẩm
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            className="admin-btn-secondary"
+            onClick={loadProducts}
+            title="Làm mới"
+          >
+            <IoRefreshOutline style={{ fontSize: '1.1rem' }} />
+            <span>Làm mới</span>
+          </button>
+          <button className="dash-view-all-btn" onClick={openAddModal}>
+            <IoAddOutline style={{ fontSize: '1.25rem' }} />
+            <span>Thêm Sản Phẩm Mới</span>
+          </button>
+        </div>
       </div>
 
       <div className="admin-card">
         {/* Filter Bar */}
-        <div style={{padding: '16px', borderBottom: '1px solid var(--admin-border)', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center'}}>
-          <input
-            type="text"
-            placeholder="Tìm kiếm tên, danh mục, ID..."
-            value={keyword}
-            onChange={e => setKeyword(e.target.value)}
-            style={{padding: '10px 14px', flex: '1', minWidth: '220px', borderRadius: '8px', border: '1px solid var(--admin-border)', outline: 'none', background: 'var(--admin-bg)', color: 'var(--admin-text-main)'}}
-          />
+        <div className="admin-table-filter-bar">
+          <div className="admin-filter-search-box">
+            <IoSearchOutline className="filter-search-icon" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên sản phẩm, danh mục, ID..."
+              value={keyword}
+              onChange={e => setKeyword(e.target.value)}
+            />
+            {keyword && (
+              <button
+                type="button"
+                className="filter-clear-btn"
+                onClick={() => setKeyword('')}
+              >
+                <IoCloseOutline />
+              </button>
+            )}
+          </div>
 
-          <select
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-            style={{padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--admin-border)', outline: 'none', minWidth: '160px', background: 'var(--admin-bg)', color: 'var(--admin-text-main)'}}
-          >
-            <option value="ALL">Tất cả danh mục</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="admin-filter-select-box">
+            <select
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+            >
+              <option value="ALL">Tất cả thương hiệu/danh mục</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
 
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            style={{padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--admin-border)', outline: 'none', background: 'var(--admin-bg)', color: 'var(--admin-text-main)'}}
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="ACTIVE">Đang hoạt động</option>
-            <option value="INACTIVE">Đã ẩn</option>
-          </select>
+          <div className="admin-filter-select-box">
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang hiển thị</option>
+              <option value="INACTIVE">Đã ẩn</option>
+            </select>
+          </div>
 
           {hasActiveFilter && (
             <button
+              type="button"
               onClick={handleResetFilters}
-              style={{padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--admin-border)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', cursor: 'pointer', whiteSpace: 'nowrap'}}
-              title="Xóa bộ lọc"
+              className="admin-filter-reset-pill"
             >
-              <i className="fas fa-times" style={{marginRight: '6px'}}></i>Xóa lọc
+              <IoCloseOutline style={{ fontSize: '1.1rem' }} />
+              <span>Xóa lọc</span>
             </button>
           )}
 
-          <span style={{fontSize: '0.85rem', color: 'var(--admin-text-muted)', whiteSpace: 'nowrap', marginLeft: 'auto'}}>
-            {filteredProducts.length} / {allProducts.length} sản phẩm
-          </span>
+          <div className="admin-table-count">
+            Hiển thị <strong>{filteredProducts.length}</strong> / {allProducts.length} sản phẩm
+          </div>
         </div>
 
+        {/* Table */}
         {loading ? (
-          <div className="dash-loading"><i className="fas fa-spinner fa-spin"></i><span> Đang tải...</span></div>
+          <div className="dash-loading-screen">
+            <div className="dash-spinner"></div>
+            <span>Đang tải danh sách sản phẩm...</span>
+          </div>
         ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Sản Phẩm</th>
-                <th>Giá Bán</th>
-                <th>Kho</th>
-                <th>Trạng Thái</th>
-                <th>Hành Động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedProducts.map(p => (
-                <tr key={p.id}>
-                  <td>#{p.id}</td>
-                  <td>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                      <img src={p.hinhAnh} alt="" style={{width: '40px', height: '40px', objectFit: 'contain', background: '#f8fafc', borderRadius: '8px'}} />
-                      <div>
-                        <div style={{fontWeight: 600, fontSize: '0.85rem'}}>{p.tenSanPham}</div>
-                        <div style={{fontSize: '0.75rem', color: 'var(--admin-text-muted)'}}>{p.danhMuc}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{fontWeight: 700, color: 'var(--admin-orange)'}}>{fmt(p.giaBanSo)}</td>
-                  <td>{p.stockQuantity}</td>
-                  <td>
-                    <span className="status-badge" style={{background: p.isActive !== false ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: p.isActive !== false ? '#10b981' : '#ef4444'}}>
-                      {p.isActive !== false ? 'Hoạt động' : 'Đã ẩn'}
-                    </span>
-                  </td>
-                  <td>
-                    <button onClick={() => openEditModal(p)} style={{background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: '5px', fontSize: '1rem'}} title="Sửa">
-                      <i className="fas fa-edit"></i>
-                    </button>
-                    <button onClick={() => handleDelete(p.id)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px', fontSize: '1rem'}} title="Xóa">
-                      <i className="fas fa-trash-alt"></i>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {paginatedProducts.length === 0 && (
+          <div className="admin-table-responsive">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" style={{textAlign: 'center', padding: '30px', color: 'var(--admin-text-muted)'}}>
-                    {hasActiveFilter ? 'Không tìm thấy sản phẩm nào phù hợp với bộ lọc.' : 'Chưa có sản phẩm nào.'}
-                  </td>
+                  <th style={{ width: '80px' }}>ID</th>
+                  <th>Sản Phẩm</th>
+                  <th>Giá Bán</th>
+                  <th>Giá Gốc</th>
+                  <th>Tồn Kho</th>
+                  <th>Trạng Thái</th>
+                  <th style={{ textAlign: 'center', width: '100px' }}>Thao Tác</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedProducts.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      <span className="order-id-badge">#{p.id}</span>
+                    </td>
+                    <td>
+                      <div className="product-table-cell">
+                        <img
+                          src={p.hinhAnh}
+                          alt=""
+                          className="product-table-thumb"
+                          onError={(e) => { e.target.src = 'https://placehold.co/48x48?text=Phone'; }}
+                        />
+                        <div>
+                          <div className="product-table-name" title={p.tenSanPham}>{p.tenSanPham}</div>
+                          <span className="product-table-cat">{p.danhMuc || 'Chưa phân loại'}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="order-amount-text">{fmt(p.giaBanSo)}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--admin-text-muted)', textDecoration: p.giaGocSo > p.giaBanSo ? 'line-through' : 'none' }}>
+                        {p.giaGocSo ? fmt(p.giaGocSo) : '-'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={p.stockQuantity < 15 ? 'stock-warning-badge' : 'stock-normal-badge'}>
+                        {p.stockQuantity ?? 100} máy
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-pill ${p.isActive !== false ? 'active' : 'inactive'}`}>
+                        {p.isActive !== false ? 'Hiển thị' : 'Đã ẩn'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="admin-actions-cell" style={{ justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          className="admin-action-btn edit"
+                          onClick={() => openEditModal(p)}
+                          title="Sửa sản phẩm"
+                        >
+                          <IoCreateOutline />
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-action-btn danger"
+                          onClick={() => handleDelete(p.id)}
+                          title="Xóa sản phẩm"
+                        >
+                          <IoTrashOutline />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {paginatedProducts.length === 0 && (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--admin-text-muted)' }}>
+                      {hasActiveFilter ? 'Không tìm thấy sản phẩm nào phù hợp với bộ lọc.' : 'Chưa có sản phẩm nào.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Phân trang */}
         {!loading && totalPages > 1 && (
-          <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', padding: '20px'}}>
-            <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="admin-btn-secondary">Trước</button>
-            <span style={{padding: '10px', fontWeight: 600}}>Trang {page + 1} / {totalPages}</span>
-            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="admin-btn-secondary">Sau</button>
+          <div className="admin-pagination">
+            <button
+              type="button"
+              disabled={page === 0}
+              onClick={() => setPage(p => p - 1)}
+              className="admin-pagination-btn"
+            >
+              <IoChevronBackOutline />
+              <span>Trước</span>
+            </button>
+            <span className="admin-pagination-info">
+              Trang <strong>{page + 1}</strong> / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage(p => p + 1)}
+              className="admin-pagination-btn"
+            >
+              <span>Sau</span>
+              <IoChevronForwardOutline />
+            </button>
           </div>
         )}
       </div>
 
       {/* Modal Thêm/Sửa */}
       {isModalOpen && (
-        <div className="admin-modal-overlay">
-          <div className="admin-modal">
+        <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
             <div className="admin-modal-header">
-              <h2>{isEditMode ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm'}</h2>
-              <button className="admin-modal-close" onClick={() => setIsModalOpen(false)}><i className="fas fa-times"></i></button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <IoPhonePortraitOutline style={{ color: 'var(--admin-primary)', fontSize: '1.4rem' }} />
+                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{isEditMode ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới'}</h2>
+              </div>
+              <button
+                type="button"
+                className="admin-modal-close"
+                onClick={() => setIsModalOpen(false)}
+              >
+                <IoCloseOutline />
+              </button>
             </div>
+
             <form onSubmit={handleSave} className="admin-modal-body">
               {errorMsg && <div className="admin-alert error">{errorMsg}</div>}
 
               <div className="form-group">
                 <label>Tên Sản Phẩm *</label>
-                <input type="text" name="tenSanPham" value={formData.tenSanPham} onChange={handleInputChange} required />
+                <input
+                  type="text"
+                  name="tenSanPham"
+                  value={formData.tenSanPham}
+                  onChange={handleInputChange}
+                  placeholder="VD: Điện thoại iPhone 16 Pro Max 256GB"
+                  required
+                />
               </div>
 
               <div className="form-group-grid">
                 <div className="form-group">
-                  <label>Giá Bán (VND) *</label>
-                  <input type="number" name="giaBanSo" value={formData.giaBanSo} onChange={handleInputChange} required min="0" />
+                  <label>Giá Bán Khuyến Mãi (VND) *</label>
+                  <input
+                    type="number"
+                    name="giaBanSo"
+                    value={formData.giaBanSo}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                  />
                 </div>
                 <div className="form-group">
-                  <label>Giá Gốc (VND)</label>
-                  <input type="number" name="giaGocSo" value={formData.giaGocSo} onChange={handleInputChange} min="0" />
+                  <label>Giá Gốc Niêm Yết (VND)</label>
+                  <input
+                    type="number"
+                    name="giaGocSo"
+                    value={formData.giaGocSo}
+                    onChange={handleInputChange}
+                    min="0"
+                  />
                 </div>
               </div>
 
               <div className="form-group">
-                <label>URL Hình Ảnh *</label>
-                <input type="text" name="hinhAnh" value={formData.hinhAnh} onChange={handleInputChange} required />
+                <label>URL Hình Ảnh Sản Phẩm *</label>
+                <input
+                  type="text"
+                  name="hinhAnh"
+                  value={formData.hinhAnh}
+                  onChange={handleInputChange}
+                  placeholder="https://..."
+                  required
+                />
               </div>
 
               <div className="form-group-grid">
                 <div className="form-group">
                   <label>Thương Hiệu / Danh Mục</label>
-                  <input type="text" name="danhMuc" value={formData.danhMuc} onChange={handleInputChange} placeholder="VD: Apple, Samsung..." />
+                  <input
+                    type="text"
+                    name="danhMuc"
+                    value={formData.danhMuc}
+                    onChange={handleInputChange}
+                    placeholder="VD: Apple, Samsung, Xiaomi..."
+                  />
                 </div>
                 <div className="form-group">
-                  <label>Số lượng kho</label>
-                  <input type="number" name="stockQuantity" value={formData.stockQuantity} onChange={handleInputChange} min="0" />
+                  <label>Số Lượng Tồn Kho</label>
+                  <input
+                    type="number"
+                    name="stockQuantity"
+                    value={formData.stockQuantity}
+                    onChange={handleInputChange}
+                    min="0"
+                  />
                 </div>
               </div>
 
-              <div className="form-group" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleInputChange} id="isActive" style={{width: 'auto'}} />
-                <label htmlFor="isActive" style={{marginBottom: 0, textTransform: 'none', fontSize: '0.9rem', color: 'var(--admin-text-main)'}}>Sản phẩm đang hoạt động (Hiển thị cho khách)</label>
+              <div className="form-checkbox-row">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleInputChange}
+                  id="prodIsActive"
+                />
+                <label htmlFor="prodIsActive">
+                  Sản phẩm đang kinh doanh (Hiển thị cho khách hàng đặt mua)
+                </label>
               </div>
 
               <div className="admin-modal-footer">
-                <button type="button" className="admin-btn-secondary" onClick={() => setIsModalOpen(false)}>Hủy</button>
-                <button type="submit" className="admin-btn-primary">Lưu Sản Phẩm</button>
+                <button type="button" className="admin-btn-secondary" onClick={() => setIsModalOpen(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className="admin-btn-primary">
+                  <IoCheckmarkCircleOutline style={{ fontSize: '1.1rem' }} />
+                  {isEditMode ? 'Lưu Thay Đổi' : 'Thêm Sản Phẩm'}
+                </button>
               </div>
             </form>
           </div>

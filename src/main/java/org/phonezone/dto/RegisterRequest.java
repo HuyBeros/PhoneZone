@@ -12,6 +12,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
+    @Size(max = 100, message = "Email tối đa 100 ký tự")
     public String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")
@@ -19,7 +20,9 @@ public class RegisterRequest {
     public String password;
 
     @NotBlank(message = "Họ tên không được để trống")
+    @Size(max = 100, message = "Họ tên tối đa 100 ký tự")
     public String fullName;
 
+    @Size(max = 20, message = "Số điện thoại tối đa 20 ký tự")
     public String phone;
 }

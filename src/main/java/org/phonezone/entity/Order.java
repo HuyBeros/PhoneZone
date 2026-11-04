@@ -35,6 +35,17 @@ public class Order extends PanacheEntity {
     @Column(name = "final_amount", nullable = false)
     public Long finalAmount;
 
+    @Column(name = "shipping_fee", columnDefinition = "bigint default 0")
+    public Long shippingFee = 0L;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "used_coupon_id")
+    public UserCoupon usedCoupon;
+
+    // Existing orders already received their points under the previous policy.
+    @Column(name = "rewards_credited", columnDefinition = "boolean default true")
+    public Boolean rewardsCredited = true;
+
     @Column(name = "payment_method", length = 50)
     public String paymentMethod = "COD";
 

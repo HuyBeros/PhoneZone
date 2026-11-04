@@ -1,7 +1,7 @@
 package org.phonezone.controller;
 
 import io.quarkus.panache.common.Sort;
-import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -13,7 +13,7 @@ import java.util.Map;
 @Path("/api/admin/contacts")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Authenticated
+@RolesAllowed("ROLE_ADMIN")
 public class AdminContactController {
 
     @GET

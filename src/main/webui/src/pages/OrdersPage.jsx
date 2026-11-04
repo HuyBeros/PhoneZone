@@ -6,6 +6,7 @@ import { useToast } from '../store/ToastContext';
 import { fetchApi } from '../api/apiClient';
 
 const STATUS_CONFIG = {
+  'Admin xác nhận & giao': { cls: 'status-shipping', icon: 'fa-truck-fast', label: 'Đang giao' },
   'Đang xử lý':    { cls: 'status-pending',    icon: 'fa-clock',          label: 'Đang xử lý'    },
   'Đã xác nhận':   { cls: 'status-confirmed',  icon: 'fa-circle-check',   label: 'Đã xác nhận'  },
   'Đang giao':     { cls: 'status-shipping',   icon: 'fa-truck-fast',     label: 'Đang giao'     },

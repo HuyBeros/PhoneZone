@@ -1,51 +1,121 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BRANDS } from '../data/data';
 import { fmt, mapProduct } from '../utils/utils';
 import { useCart } from '../store/CartContext';
-import { usePoints } from '../store/PointsContext';
 import { useAuth } from '../store/AuthContext';
+import { useWishlist } from '../hooks/useWishlist';
 import { fetchApi } from '../api/apiClient';
+import { useMediaQuery } from '../hooks/useDrawer';
+import {
+  IoChevronDown,
+  IoShieldCheckmarkOutline,
+  IoArrowForward,
+  IoPersonOutline,
+  IoBagCheckOutline,
+  IoHeart,
+  IoHeartOutline,
+  IoTicketOutline,
+  IoLogOutOutline,
+  IoLocationOutline,
+  IoCallOutline,
+  IoSearchOutline,
+  IoFlameOutline,
+  IoReloadOutline,
+  IoCartOutline,
+  IoPersonCircleOutline,
+} from 'react-icons/io5';
+
+/* ── Name & Initials Helpers ── */
+function formatDisplayName(user) {
+  if (!user) return 'Người dùng';
+  const raw = (user.fullName && user.fullName.trim()) || user.username || 'Người dùng';
+  return raw.replace(/\b\w/g, l => l.toUpperCase());
+}
 
 function getInitials(name) {
   if (!name) return 'U';
-  return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase();
+  const parts = name.trim().split(/\s+/);
+  return parts[parts.length - 1].slice(0, 1).toUpperCase();
 }
+
+/* ── Popular Search Keywords ── */
+const POPULAR_SEARCHES = [
+  'iPhone 16 Pro Max',
+  'Samsung S24 Ultra',
+  'Xiaomi 14T',
+  'iPad Air 6',
+  'OPPO Find X7',
+  'Sửa chữa thay pin'
+];
 
 /* ── User Dropdown ── */
 function UserDropdown({ user, onLogout }) {
   const isAdmin = user?.role === 'ROLE_ADMIN';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const dropdownRef = useRef(null);
+  const { wishlistCount, openWishlist } = useWishlist();
+
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
+  // Click outside to close user dropdown
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fullName = formatDisplayName(user);
+  const shortName = fullName.split(/\s+/).pop();
+  const avatarLetter = getInitials(shortName);
 
   return (
-    <div className="user-dropdown-wrap">
+    <div
+      className={`user-dropdown-wrap${menuOpen ? ' is-open' : ''}`}
+      ref={dropdownRef}
+      onKeyDown={event => { if (event.key === 'Escape') setMenuOpen(false); }}
+    >
       {/* Trigger */}
-      <div className="user-trigger">
+      <button
+        type="button"
+        className="user-trigger"
+        aria-label="Menu tài khoản"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(v => !v)}
+      >
         <div className="user-avatar">
-          {user.avatar
-            ? <img src={user.avatar} alt={user.fullName || user.username} />
-            : <span>{getInitials(user.fullName || user.username)}</span>
-          }
+          {user.avatar ? (
+            <img src={user.avatar} alt={fullName} />
+          ) : (
+            <span>{avatarLetter}</span>
+          )}
         </div>
         <div className="user-info-mini">
-          <span className="user-name-mini">{(user.fullName || user.username).split(' ').pop()}</span>
+          <span className="user-name-mini">{shortName}</span>
           {isAdmin && <span className="admin-badge-mini">Admin</span>}
-          <i className="fas fa-chevron-down user-caret"></i>
+          <IoChevronDown className="user-caret" style={{ fontSize: '0.8rem' }} />
         </div>
-      </div>
+      </button>
 
       {/* Dropdown menu */}
-      <div className="user-dropdown">
+      <div className="user-dropdown" inert={!menuOpen ? '' : undefined}>
         {/* Header */}
         <div className="ud-header">
-          <div className="ud-avatar" style={isAdmin ? {background: 'linear-gradient(135deg,#6366f1,#8b5cf6)'} : {}}>
-            {user.avatar
-              ? <img src={user.avatar} alt={user.fullName || user.username} />
-              : <span>{getInitials(user.fullName || user.username)}</span>
-            }
+          <div className="ud-avatar">
+            {user.avatar ? (
+              <img src={user.avatar} alt={fullName} />
+            ) : (
+              <span>{avatarLetter}</span>
+            )}
           </div>
           <div className="ud-info">
             <div className="ud-name">
-              {user.fullName || user.username}
+              {fullName}
               {isAdmin && <span className="ud-admin-tag">Admin</span>}
             </div>
             <div className="ud-email">{user.email || 'Thành viên PhoneZone'}</div>
@@ -54,16 +124,16 @@ function UserDropdown({ user, onLogout }) {
 
         <div className="ud-divider"></div>
 
-        {/* Admin Panel Link - chỉ hiển thị với ROLE_ADMIN */}
+        {/* Admin Panel Link */}
         {isAdmin && (
           <>
             <Link to="/admin" className="ud-item ud-admin-item">
-              <span className="ud-item-icon ud-icon-admin"><i className="fas fa-shield-halved"></i></span>
+              <span className="ud-item-icon ud-icon-admin"><IoShieldCheckmarkOutline style={{ fontSize: '1.1rem' }} /></span>
               <div>
                 <div className="ud-item-label">Trang quản trị</div>
                 <div className="ud-item-sub">Quản lý sản phẩm, đơn hàng</div>
               </div>
-              <i className="fas fa-arrow-right ud-admin-arrow"></i>
+              <IoArrowForward className="ud-admin-arrow" style={{ fontSize: '0.85rem' }} />
             </Link>
             <div className="ud-divider"></div>
           </>
@@ -71,44 +141,50 @@ function UserDropdown({ user, onLogout }) {
 
         {/* Menu items */}
         <Link to="/profile" className="ud-item">
-          <span className="ud-item-icon"><i className="fas fa-user-pen"></i></span>
+          <span className="ud-item-icon"><IoPersonOutline style={{ fontSize: '1.1rem' }} /></span>
           <div>
             <div className="ud-item-label">Thông tin cá nhân</div>
-            <div className="ud-item-sub">Chỉnh sửa hồ sơ, địa chỉ</div>
-          </div>
-        </Link>
-
-        <Link to="/rewards" className="ud-item">
-          <span className="ud-item-icon ud-icon-gold"><i className="fas fa-ticket"></i></span>
-          <div>
-            <div className="ud-item-label">Coupon của tôi</div>
-            <div className="ud-item-sub">Xem & sử dụng mã giảm giá</div>
+            <div className="ud-item-sub">Hồ sơ, địa chỉ giao hàng</div>
           </div>
         </Link>
 
         <Link to="/orders" className="ud-item">
-          <span className="ud-item-icon ud-icon-blue"><i className="fas fa-box"></i></span>
+          <span className="ud-item-icon ud-icon-blue"><IoBagCheckOutline style={{ fontSize: '1.1rem' }} /></span>
           <div>
             <div className="ud-item-label">Đơn hàng của tôi</div>
             <div className="ud-item-sub">Theo dõi trạng thái giao hàng</div>
           </div>
         </Link>
 
-        <Link to="/rewards" className="ud-item">
-          <span className="ud-item-icon ud-icon-yellow"><i className="fas fa-star"></i></span>
+        <button
+          type="button"
+          className="ud-item"
+          onClick={() => { setMenuOpen(false); openWishlist(); }}
+        >
+          <span className="ud-item-icon ud-icon-red"><IoHeartOutline style={{ fontSize: '1.1rem' }} /></span>
           <div>
-            <div className="ud-item-label">Điểm thưởng</div>
-            <div className="ud-item-sub">Đổi điểm lấy coupon ưu đãi</div>
+            <div className="ud-item-label">
+              Sản phẩm yêu thích {wishlistCount > 0 && `(${wishlistCount})`}
+            </div>
+            <div className="ud-item-sub">Xem các sản phẩm đã lưu</div>
+          </div>
+        </button>
+
+        <Link to="/rewards" className="ud-item">
+          <span className="ud-item-icon ud-icon-gold"><IoTicketOutline style={{ fontSize: '1.1rem' }} /></span>
+          <div>
+            <div className="ud-item-label">Coupon &amp; Mã giảm giá</div>
+            <div className="ud-item-sub">Xem &amp; sử dụng mã ưu đãi</div>
           </div>
         </Link>
 
         <div className="ud-divider"></div>
 
-        <button className="ud-item ud-logout" onClick={onLogout}>
+        <button type="button" className="ud-item ud-logout" onClick={onLogout}>
           <span className="ud-item-icon ud-icon-red"><i className="fas fa-right-from-bracket"></i></span>
           <div>
             <div className="ud-item-label">Đăng xuất</div>
-            <div className="ud-item-sub">Tạm biệt, {(user.fullName || user.username).split(' ').pop()}!</div>
+            <div className="ud-item-sub">Tạm biệt, {shortName}!</div>
           </div>
         </button>
       </div>
@@ -116,33 +192,55 @@ function UserDropdown({ user, onLogout }) {
   );
 }
 
-/* ── Navbar ── */
+/* ── Navbar Main ── */
 export default function Navbar() {
-  const { cartCount, openCart } = useCart();
-  const { points } = usePoints();
+  const { cartCount, cartTotal, openCart } = useCart();
+  const { wishlistCount, openWishlist } = useWishlist();
   const { user, logout } = useAuth();
-
-  const [megaOpen, setMegaOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-
-  const megaRef = useRef(null);
-  const searchRef = useRef(null);
+  const location = useLocation();
   const navigate = useNavigate();
 
-  // Đóng mega menu khi click ngoài
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [brandsOpen, setBrandsOpen] = useState(false);
+  const mobileNav = useMediaQuery('(max-width: 1200px)');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const searchRef = useRef(null);
+
+  // Close search dropdown on click outside
   useEffect(() => {
     const handler = (e) => {
-      if (megaRef.current && !megaRef.current.contains(e.target)) {
-        setMegaOpen(false);
-      }
       if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setSearchTerm('');
+        setSearchFocused(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+    setBrandsOpen(false);
+    setSearchFocused(false);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!mobileNav) setMobileOpen(false);
+  }, [mobileNav]);
+
+  useEffect(() => {
+    const dismiss = event => {
+      if (event.key === 'Escape') {
+        setMobileOpen(false);
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener('keydown', dismiss);
+    return () => document.removeEventListener('keydown', dismiss);
   }, []);
 
   // Sticky scroll styling
@@ -157,10 +255,7 @@ export default function Navbar() {
 
   const closeMobile = () => setMobileOpen(false);
 
-  const handleLogin = () => {
-    navigate('/login');
-  };
-
+  const handleLogin = () => navigate('/login');
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -170,122 +265,286 @@ export default function Navbar() {
     const val = e.target.value;
     setSearchTerm(val);
     if (val.trim().length > 1) {
+      setSearchLoading(true);
       try {
         const res = await fetchApi(`/products/search?q=${encodeURIComponent(val)}`);
         setSearchResults((res || []).slice(0, 5).map(mapProduct));
-      } catch (e) {
+      } catch (err) {
         setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
       }
     } else {
       setSearchResults([]);
+      setSearchLoading(false);
     }
   };
 
   const goToProduct = (id) => {
     setSearchTerm('');
+    setSearchFocused(false);
     navigate(`/product/${id}`);
   };
 
+  const submitSearch = (event) => {
+    event.preventDefault();
+    const keyword = searchTerm.trim();
+    if (!keyword) return;
+    navigate(`/brand/all?q=${encodeURIComponent(keyword)}`);
+    setSearchTerm('');
+    setSearchFocused(false);
+    closeMobile();
+  };
+
+  const pickPopularKeyword = (kw) => {
+    setSearchTerm(kw);
+    navigate(`/brand/all?q=${encodeURIComponent(kw)}`);
+    setSearchFocused(false);
+    closeMobile();
+  };
+
+  const currentPath = location.pathname;
+
   return (
-    <header className="navbar" id="navbar">
-      <div className="container navbar-inner">
-        {/* Logo */}
-        <Link to="/" className="logo">Phone<span>Zone</span></Link>
-
-        {/* Nav links */}
-        <nav className={`nav-links${mobileOpen ? ' open' : ''}`} id="navLinks">
-          <Link to="/" className="nav-link" onClick={closeMobile}>Trang chủ</Link>
-
-          {/* Điện thoại với hover dropdown */}
-          <div className="nav-dropdown-wrap">
-            <Link to="/brand/all" className="nav-link nav-link-has-dropdown" onClick={closeMobile}>
-              Điện thoại <i className="fas fa-chevron-down nav-caret"></i>
-            </Link>
-            <div className="nav-dropdown">
-              <div className="nav-dropdown-brands">
-                {BRANDS.map(b => (
-                  <Link
-                    key={b.id}
-                    className="nav-dd-item"
-                    to={`/brand/${b.id}`}
-                    onClick={closeMobile}
-                  >
-                    {b.logo ? (
-                      <img src={b.logo} alt={b.name} className="dd-logo" />
-                    ) : (
-                      <span className="dd-dot" style={{ backgroundColor: b.color }}></span>
-                    )}
-                    {b.name}
-                  </Link>
-                ))}
-              </div>
-              <div className="nav-dd-divider"></div>
-              <Link className="nav-dd-all" to="/brand/all" onClick={closeMobile}>
-                <i className="fas fa-grip"></i> Xem tất cả hãng
-              </Link>
-            </div>
+    <>
+      {/* ── TOPBAR THÔNG TIN & ƯU ĐÃI ── */}
+      <div className="topbar">
+        <div className="container topbar-inner">
+          <span className="topbar-promo">
+            <i className="fas fa-truck-fast"></i> Miễn phí giao hàng từ 300K
+            <span className="topbar-dot">·</span>
+            <i className="fas fa-percent"></i> Trả góp 0% duyệt 5 phút
+          </span>
+          <div className="topbar-right">
+            <a href="tel:18001234" className="topbar-link" title="Gọi tổng đài miễn phí">
+              <i className="fas fa-phone-volume"></i> Hotline: <strong>1800 1234</strong> (Miễn phí)
+            </a>
+            <span className="topbar-divider">|</span>
+            <a
+              href="https://maps.google.com/?q=298+Đ.+Cầu+Diễn,+Minh+Khai,+Bắc+Từ+Liêm,+Hà+Nội"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="topbar-link"
+              title="Xem vị trí cửa hàng trên Google Maps"
+            >
+              <i className="fas fa-location-dot"></i> Cửa hàng: Nhổn, Bắc Từ Liêm, HN
+            </a>
           </div>
-
-          <Link to="/tablet" className="nav-link" onClick={closeMobile}>
-            Máy tính bảng
-          </Link>
-          <Link to="/repair" className="nav-link" onClick={closeMobile}>
-            Sửa chữa
-          </Link>
-          <Link to="/contact" className="nav-link" onClick={closeMobile}>Liên hệ</Link>
-        </nav>
-
-        {/* Actions */}
-        <div className="nav-actions">
-          <div className="search-box" ref={searchRef}>
-            <input
-              type="text"
-              placeholder="Tìm điện thoại..."
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-            <button aria-label="Tìm kiếm"><i className="fas fa-magnifying-glass"></i></button>
-
-            {searchTerm.length > 1 && searchResults.length > 0 && (
-              <div className="search-results">
-                {searchResults.map(p => (
-                  <div key={p.id} className="search-result-item" onClick={() => goToProduct(p.id)}>
-                    <img src={p.img} alt={p.name} />
-                    <div className="sr-info">
-                      <div className="sr-name">{p.name}</div>
-                      <div className="sr-price">{fmt(p.price)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <Link to="/rewards" className="icon-btn rewards-nav-btn" title="Điểm thưởng">
-            <i className="fas fa-star"></i>
-            <span className="badge rewards-badge">{points}</span>
-          </Link>
-
-          <button className="icon-btn" aria-label="Giỏ hàng" onClick={openCart}>
-            <i className="fas fa-cart-shopping"></i>
-            <span className="badge">{cartCount}</span>
-          </button>
-
-          {/* User section */}
-          {user ? (
-            <UserDropdown user={user} onLogout={handleLogout} />
-          ) : (
-            <button className="btn-login" onClick={handleLogin}>
-              <i className="fas fa-user-circle"></i>
-              <span>Đăng nhập</span>
-            </button>
-          )}
-
-          <button className="hamburger" aria-label="Menu" onClick={() => setMobileOpen(v => !v)}>
-            <span></span><span></span><span></span>
-          </button>
         </div>
       </div>
-    </header>
+
+      {/* ── MAIN NAVBAR ── */}
+      <header className="navbar" id="navbar">
+        <div className="container navbar-inner">
+          {/* Logo đồng nhất viết liền PhoneZone */}
+          <Link to="/" className="logo">
+            <i className="fas fa-mobile-screen-button logo-icon"></i>PhoneZone
+          </Link>
+
+          {/* Nav links (không bao giờ ngắt 2 dòng) */}
+          <nav className={`nav-links${mobileOpen ? ' open' : ''}`} id="navLinks" aria-label="Điều hướng chính" inert={mobileNav && !mobileOpen ? '' : undefined}>
+            <Link
+              to="/"
+              className={`nav-link${currentPath === '/' ? ' active' : ''}`}
+              onClick={closeMobile}
+            >
+              Trang chủ
+            </Link>
+
+            {/* Điện thoại với hover dropdown */}
+            <div className={`nav-dropdown-wrap${brandsOpen ? ' brands-open' : ''}`}>
+              <Link
+                to="/brand/all"
+                className={`nav-link nav-link-has-dropdown${currentPath.startsWith('/brand') ? ' active' : ''}`}
+                onClick={closeMobile}
+              >
+                Điện thoại <i className="fas fa-chevron-down nav-caret"></i>
+              </Link>
+              <button type="button" className="mobile-brands-toggle" aria-label="Danh sách hãng điện thoại" aria-expanded={brandsOpen} aria-controls="navBrands" onClick={() => setBrandsOpen(value => !value)}>
+                <IoChevronDown />
+              </button>
+              <div className="nav-dropdown" id="navBrands" inert={mobileNav && !brandsOpen ? '' : undefined}>
+                <div className="nav-dropdown-brands">
+                  {BRANDS.map(b => (
+                    <Link
+                      key={b.id}
+                      className="nav-dd-item"
+                      to={`/brand/${b.id}`}
+                      onClick={closeMobile}
+                    >
+                      <div className="dd-logo-wrap">
+                        {b.logo ? (
+                          <img src={b.logo} alt={b.name} className="dd-logo" />
+                        ) : (
+                          <span className="dd-dot" style={{ backgroundColor: b.color }}></span>
+                        )}
+                      </div>
+                      <span className="dd-brand-name">{b.name}</span>
+                    </Link>
+                  ))}
+                </div>
+                <div className="nav-dd-divider"></div>
+                <Link className="nav-dd-all" to="/brand/all" onClick={closeMobile}>
+                  <i className="fas fa-grip"></i> Xem tất cả hãng
+                </Link>
+              </div>
+            </div>
+
+            <Link
+              to="/tablet"
+              className={`nav-link${currentPath.startsWith('/tablet') ? ' active' : ''}`}
+              onClick={closeMobile}
+            >
+              Máy tính bảng
+            </Link>
+
+            <Link
+              to="/repair"
+              className={`nav-link${currentPath.startsWith('/repair') ? ' active' : ''}`}
+              onClick={closeMobile}
+            >
+              Sửa chữa
+            </Link>
+
+            <Link
+              to="/contact"
+              className={`nav-link${currentPath === '/contact' ? ' active' : ''}`}
+              onClick={closeMobile}
+            >
+              Liên hệ
+            </Link>
+            <button type="button" className="nav-link mobile-wishlist-link" onClick={() => { closeMobile(); openWishlist(); }}>Sản phẩm yêu thích</button>
+          </nav>
+
+          {/* Actions */}
+          <div className="nav-actions">
+            {/* Search Box with Autocomplete & Popular Searches */}
+            <form className="search-box" ref={searchRef} onSubmit={submitSearch}>
+              <input
+                type="text"
+                placeholder="Tìm điện thoại, tablet..."
+                value={searchTerm}
+                onChange={handleSearch}
+                onFocus={() => setSearchFocused(true)}
+                aria-label="Tìm kiếm sản phẩm"
+              />
+              <button type="submit" aria-label="Tìm kiếm"><IoSearchOutline style={{ fontSize: '1.1rem' }} /></button>
+
+              {searchFocused && (
+                <div className="search-dropdown-menu">
+                  {/* Trường hợp 1: Chưa nhập chữ -> Hiển thị từ khóa hot */}
+                  {searchTerm.trim().length <= 1 && (
+                    <div className="search-popular-wrap">
+                      <div className="sp-title">
+                        <IoFlameOutline style={{ color: '#f97316', verticalAlign: '-2px', marginRight: 4 }} /> Tìm kiếm phổ biến
+                      </div>
+                      <div className="sp-tags">
+                        {POPULAR_SEARCHES.map(kw => (
+                          <button
+                            key={kw}
+                            type="button"
+                            className="sp-tag-btn"
+                            onClick={() => pickPopularKeyword(kw)}
+                          >
+                            {kw}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Trường hợp 2: Đang nhập -> Hiển thị kết quả tìm kiếm */}
+                  {searchTerm.trim().length > 1 && (
+                    <div className="search-results-list">
+                      {searchLoading && (
+                        <div className="sr-loading">
+                          <IoReloadOutline className="fa-spin" style={{ verticalAlign: '-2px', marginRight: 4 }} /> Đang tìm sản phẩm...
+                        </div>
+                      )}
+
+                      {!searchLoading && searchResults.length > 0 && (
+                        <>
+                          <div className="sr-header">Sản phẩm gợi ý</div>
+                          {searchResults.map(p => (
+                            <div key={p.id} className="search-result-item" onClick={() => goToProduct(p.id)}>
+                              <img src={p.img} alt={p.name} className="sr-thumb" />
+                              <div className="sr-info">
+                                <div className="sr-name" title={p.name}>{p.name}</div>
+                                <div className="sr-price-row">
+                                  <span className="sr-price">{fmt(p.price)}</span>
+                                  {p.oldPrice && p.oldPrice > p.price && (
+                                    <span className="sr-old-price">{fmt(p.oldPrice)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <button type="submit" className="sr-all-btn">
+                            Xem tất cả kết quả cho "{searchTerm}" <IoArrowForward style={{ verticalAlign: '-1px', marginLeft: 4 }} />
+                          </button>
+                        </>
+                      )}
+
+                      {!searchLoading && searchResults.length === 0 && (
+                        <div className="sr-empty">
+                          Không tìm thấy sản phẩm nào khớp với "{searchTerm}"
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </form>
+
+            {/* Yêu thích (Wishlist mở Drawer trực tiếp) */}
+            <button
+              type="button"
+              className={`icon-btn wish-nav-btn${wishlistCount > 0 ? ' has-items' : ''}`}
+              aria-label="Yêu thích"
+              title="Danh sách yêu thích"
+              onClick={openWishlist}
+            >
+              {wishlistCount > 0 ? <IoHeart style={{ color: '#ef4444', fontSize: '1.25rem' }} /> : <IoHeartOutline style={{ fontSize: '1.25rem' }} />}
+              {wishlistCount > 0 && <span className="badge wish-badge">{wishlistCount}</span>}
+            </button>
+
+            {/* Giỏ hàng */}
+            <button
+              type="button"
+              className={`icon-btn cart-nav-btn${cartCount > 0 ? ' has-items' : ''}`}
+              aria-label="Giỏ hàng"
+              title="Giỏ hàng của bạn"
+              onClick={openCart}
+            >
+              <IoCartOutline style={{ fontSize: '1.3rem' }} />
+              {cartCount > 0 && <span className="badge cart-badge">{cartCount}</span>}
+              {cartTotal > 0 && <span className="cart-nav-total">{fmt(cartTotal)}</span>}
+            </button>
+
+            {/* User section */}
+            {user ? (
+              <UserDropdown user={user} onLogout={handleLogout} />
+            ) : (
+              <button type="button" className="btn-login" onClick={handleLogin} aria-label="Đăng nhập">
+                <IoPersonCircleOutline style={{ fontSize: '1.25rem', marginRight: 4, verticalAlign: '-2px' }} />
+                <span>Đăng nhập</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              className={`hamburger${mobileOpen ? ' is-active' : ''}`}
+              aria-label={mobileOpen ? 'Đóng menu' : 'Mở menu'}
+              aria-expanded={mobileOpen}
+              aria-controls="navLinks"
+              onClick={() => setMobileOpen(v => !v)}
+            >
+              <span></span><span></span><span></span>
+            </button>
+          </div>
+        </div>
+      </header>
+      {mobileNav && mobileOpen && <div className="mobile-nav-backdrop" onClick={closeMobile} aria-hidden="true" />}
+    </>
   );
 }

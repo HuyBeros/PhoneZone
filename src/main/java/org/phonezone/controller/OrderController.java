@@ -18,7 +18,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.phonezone.config.VNPayConfig;
-import jakarta.ws.rs.core.Context;
 import io.vertx.core.http.HttpServerRequest;
 
 @Path("/api/orders")
@@ -69,7 +68,18 @@ public class OrderController {
     }
 
     @POST
+    @Path("/quote")
+    public Response quote(@Valid org.phonezone.dto.OrderQuoteRequest request) {
+        return Response.ok(orderService.quote(jwt.getName(), request.couponCode, request.paymentMethod)).build();
+    }
+
+    @POST
     public Response createOrder(@Valid OrderRequest request) {
+        if ("VNPAY".equalsIgnoreCase(request.paymentMethod) && !vnPayConfig.isConfigured()) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(Map.of("error", "VNPay hiện chưa được cấu hình. Vui lòng chọn phương thức thanh toán khác."))
+                    .build();
+        }
         try {
             String username = jwt.getName();
             Order order = orderService.createOrder(username, request);
@@ -180,9 +190,9 @@ public class OrderController {
                     .entity(Map.of("error", msg))
                     .build();
         } catch (Exception e) {
-            e.printStackTrace();
+            org.jboss.logging.Logger.getLogger(OrderController.class).error("Cannot create order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "Lỗi hệ thống: " + (e.getMessage() != null ? e.getMessage() : e.toString())))
+                    .entity(Map.of("error", "Không thể tạo đơn hàng. Vui lòng thử lại sau."))
                     .build();
         }
     }
@@ -211,9 +221,9 @@ public class OrderController {
                     .entity(Map.of("error", e.getMessage()))
                     .build();
         } catch (Exception e) {
-            e.printStackTrace();
+            org.jboss.logging.Logger.getLogger(OrderController.class).error("Cannot cancel order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "Lỗi hệ thống: " + (e.getMessage() != null ? e.getMessage() : e.toString())))
+                    .entity(Map.of("error", "Không thể hủy đơn hàng. Vui lòng thử lại sau."))
                     .build();
         }
     }

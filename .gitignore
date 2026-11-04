@@ -38,6 +38,21 @@ nb-configuration.xml
 
 # Local environment
 .env
+.env.*
+!.env.example
+.local/
+.agents/
+.codex/
+*.pem
+!src/test/resources/testPrivateKey.pem
+!src/test/resources/testPublicKey.pem
+*.key
+*.p12
+*.pfx
+*.dump
+*.backup
+Thumbs.db
+Desktop.ini
 
 # Plugin directory
 /.quarkus/cli/plugins/

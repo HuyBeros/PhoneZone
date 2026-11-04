@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../api/apiClient';
 import { fmt } from '../../utils/utils';
+import {
+  IoTicketOutline,
+  IoAddOutline,
+  IoSearchOutline,
+  IoCloseOutline,
+  IoCreateOutline,
+  IoTrashOutline,
+  IoRefreshOutline,
+  IoCheckmarkCircleOutline,
+  IoStarOutline
+} from 'react-icons/io5';
 
 export default function AdminCoupons() {
   const [coupons, setCoupons] = useState([]);
@@ -22,15 +33,11 @@ export default function AdminCoupons() {
     isActive: true
   });
 
-  useEffect(() => {
-    loadCoupons();
-  }, []);
-
   const loadCoupons = async () => {
     setLoading(true);
     try {
       const data = await fetchApi('/admin/coupons');
-      setCoupons(data || []);
+      setCoupons(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load coupons', err);
     } finally {
@@ -38,9 +45,18 @@ export default function AdminCoupons() {
     }
   };
 
+  useEffect(() => {
+    loadCoupons();
+  }, []);
+
   const openAddModal = () => {
     setFormData({
-      id: null, code: '', discountAmount: 0, pointsRequired: 0, description: '', isActive: true
+      id: null,
+      code: '',
+      discountAmount: 0,
+      pointsRequired: 0,
+      description: '',
+      isActive: true
     });
     setErrorMsg('');
     setIsEditMode(false);
@@ -87,12 +103,12 @@ export default function AdminCoupons() {
       setIsModalOpen(false);
       loadCoupons();
     } catch (err) {
-      setErrorMsg(err.message || 'Có lỗi xảy ra');
+      setErrorMsg(err.message || 'Có lỗi xảy ra khi lưu mã giảm giá');
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa mã khuyến mãi này?')) {
+  const handleDelete = async (id, code) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa mã "${code}"?`)) {
       try {
         await fetchApi(`/admin/coupons/${id}`, { method: 'DELETE' });
         loadCoupons();
@@ -102,166 +118,260 @@ export default function AdminCoupons() {
     }
   };
 
-  // Lọc coupon
   const filteredCoupons = coupons.filter(c => {
-    const term = searchTerm.trim().toLowerCase();
-    const matchSearch = term === '' ||
-      (c.code && c.code.toLowerCase().includes(term)) ||
-      (c.description && c.description.toLowerCase().includes(term)) ||
-      (c.id && c.id.toString().includes(term));
     const matchStatus = statusFilter === 'ALL' ||
       (statusFilter === 'ACTIVE' && c.isActive !== false) ||
       (statusFilter === 'INACTIVE' && c.isActive === false);
-    return matchSearch && matchStatus;
+    const term = searchTerm.toLowerCase().trim();
+    const matchSearch = term === '' ||
+      (c.code && c.code.toLowerCase().includes(term)) ||
+      (c.description && c.description.toLowerCase().includes(term));
+    return matchStatus && matchSearch;
   });
 
-  const hasActiveFilter = searchTerm || statusFilter !== 'ALL';
-
-  if (loading) {
-    return (
-      <div className="dash-loading">
-        <i className="fas fa-spinner fa-spin"></i>
-        <span>Đang tải khuyến mãi...</span>
-      </div>
-    );
-  }
-
   return (
-    <div>
+    <div className="admin-coupons-page">
+      {/* ── HEADER ── */}
       <div className="dash-page-header">
         <div>
-          <h1 className="dash-title">Quản Lý Khuyến Mãi</h1>
-          <p className="dash-subtitle">Tạo và quản lý các mã giảm giá (Coupons)</p>
+          <h1 className="dash-title">Quản Lý Mã Khuyến Mãi</h1>
+          <p className="dash-subtitle">Tạo và cấu hình coupon giảm giá, voucher đổi điểm thưởng PhoneZone</p>
         </div>
-        <button className="dash-view-all-btn" onClick={openAddModal}>
-          <i className="fas fa-plus"></i> Tạo Mã Khuyến Mãi
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            className="admin-btn-secondary"
+            onClick={loadCoupons}
+            title="Làm mới"
+          >
+            <IoRefreshOutline style={{ fontSize: '1.1rem' }} />
+            <span>Làm mới</span>
+          </button>
+          <button className="dash-view-all-btn" onClick={openAddModal}>
+            <IoAddOutline style={{ fontSize: '1.25rem' }} />
+            <span>Thêm Mã Mới</span>
+          </button>
+        </div>
       </div>
 
       <div className="admin-card">
-        {/* Filter Bar */}
-        <div style={{padding: '16px', borderBottom: '1px solid var(--admin-border)', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center'}}>
-          <input
-            type="text"
-            placeholder="Tìm theo mã, mô tả, ID..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{padding: '10px 14px', flex: '1', minWidth: '220px', borderRadius: '8px', border: '1px solid var(--admin-border)', outline: 'none', background: 'var(--admin-bg)', color: 'var(--admin-text-main)'}}
-          />
+        {/* Filter bar */}
+        <div className="admin-table-filter-bar">
+          <div className="admin-filter-search-box">
+            <IoSearchOutline className="filter-search-icon" />
+            <input
+              type="text"
+              placeholder="Tìm theo Mã coupon, mô tả..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                className="filter-clear-btn"
+                onClick={() => setSearchTerm('')}
+              >
+                <IoCloseOutline />
+              </button>
+            )}
+          </div>
 
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            style={{padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--admin-border)', outline: 'none', background: 'var(--admin-bg)', color: 'var(--admin-text-main)'}}
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="ACTIVE">Đang kích hoạt</option>
-            <option value="INACTIVE">Vô hiệu hóa</option>
-          </select>
-
-          {hasActiveFilter && (
-            <button
-              onClick={() => { setSearchTerm(''); setStatusFilter('ALL'); }}
-              style={{padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--admin-border)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', cursor: 'pointer', whiteSpace: 'nowrap'}}
+          <div className="admin-filter-select-box">
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
             >
-              <i className="fas fa-times" style={{marginRight: '6px'}}></i>Xóa lọc
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang áp dụng</option>
+              <option value="INACTIVE">Đã khóa</option>
+            </select>
+          </div>
+
+          {(searchTerm || statusFilter !== 'ALL') && (
+            <button
+              type="button"
+              onClick={() => { setSearchTerm(''); setStatusFilter('ALL'); }}
+              className="admin-filter-reset-pill"
+            >
+              <IoCloseOutline style={{ fontSize: '1.1rem' }} />
+              <span>Xóa lọc</span>
             </button>
           )}
 
-          <span style={{fontSize: '0.85rem', color: 'var(--admin-text-muted)', whiteSpace: 'nowrap', marginLeft: 'auto'}}>
-            {filteredCoupons.length} / {coupons.length} mã
-          </span>
+          <div className="admin-table-count">
+            Hiển thị <strong>{filteredCoupons.length}</strong> / {coupons.length} mã ưu đãi
+          </div>
         </div>
 
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Mã Khuyến Mãi</th>
-              <th>Giảm Giá</th>
-              <th>Điểm Yêu Cầu</th>
-              <th>Trạng Thái</th>
-              <th>Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCoupons.map(c => (
-              <tr key={c.id}>
-                <td>#{c.id}</td>
-                <td>
-                  <div style={{fontWeight: 700, color: 'var(--admin-text-main)', letterSpacing: '1px'}}>{c.code}</div>
-                  <div style={{fontSize: '0.8rem', color: 'var(--admin-text-muted)'}}>{c.description || 'Không có mô tả'}</div>
-                </td>
-                <td style={{fontWeight: 700, color: '#ef4444'}}>-{fmt(c.discountAmount)}</td>
-                <td style={{fontWeight: 600, color: 'var(--admin-orange)'}}>
-                  <i className="fas fa-star" style={{fontSize: '0.75rem', marginRight: '4px'}}></i>{c.pointsRequired}
-                </td>
-                <td>
-                  <span className="status-badge" style={{background: c.isActive ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: c.isActive ? '#10b981' : '#ef4444'}}>
-                    {c.isActive ? 'Đang kích hoạt' : 'Vô hiệu hóa'}
-                  </span>
-                </td>
-                <td>
-                  <button onClick={() => openEditModal(c)} style={{background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: '5px', fontSize: '1rem'}} title="Sửa">
-                    <i className="fas fa-edit"></i>
-                  </button>
-                  <button onClick={() => handleDelete(c.id)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px', fontSize: '1rem'}} title="Xóa">
-                    <i className="fas fa-trash-alt"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filteredCoupons.length === 0 && (
-              <tr>
-                <td colSpan="6" style={{textAlign: 'center', padding: '30px', color: 'var(--admin-text-muted)'}}>
-                  {hasActiveFilter ? 'Không tìm thấy mã nào phù hợp.' : 'Chưa có mã khuyến mãi nào.'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {/* Coupons Table */}
+        {loading ? (
+          <div className="dash-loading-screen">
+            <div className="dash-spinner"></div>
+            <span>Đang tải danh sách coupon...</span>
+          </div>
+        ) : (
+          <div className="admin-table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Mã Coupon</th>
+                  <th>Mức Giảm Giá</th>
+                  <th>Điểm Yêu Cầu</th>
+                  <th>Mô Tả Ưu Đãi</th>
+                  <th>Trạng Thái</th>
+                  <th style={{ textAlign: 'center', width: '100px' }}>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCoupons.map(c => (
+                  <tr key={c.id}>
+                    <td>
+                      <div className="coupon-code-cell">
+                        <IoTicketOutline style={{ color: 'var(--admin-primary)', fontSize: '1.2rem' }} />
+                        <span className="coupon-code-badge">{c.code}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="order-amount-text">{fmt(c.discountAmount)}</span>
+                    </td>
+                    <td>
+                      <div className="reward-points-badge">
+                        <IoStarOutline style={{ color: '#eab308' }} />
+                        <span>{c.pointsRequired ? `${c.pointsRequired} điểm` : 'Miễn phí'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ maxWidth: '300px', fontSize: '0.85rem', color: 'var(--admin-text-main)' }}>
+                        {c.description || '-'}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status-pill ${c.isActive !== false ? 'active' : 'inactive'}`}>
+                        {c.isActive !== false ? 'Đang kích hoạt' : 'Tạm khóa'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="admin-actions-cell" style={{ justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          className="admin-action-btn edit"
+                          onClick={() => openEditModal(c)}
+                          title="Sửa coupon"
+                        >
+                          <IoCreateOutline />
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-action-btn danger"
+                          onClick={() => handleDelete(c.id, c.code)}
+                          title="Xóa coupon"
+                        >
+                          <IoTrashOutline />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredCoupons.length === 0 && (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--admin-text-muted)' }}>
+                      Không tìm thấy mã khuyến mãi nào phù hợp.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Modal Thêm/Sửa */}
       {isModalOpen && (
-        <div className="admin-modal-overlay">
-          <div className="admin-modal">
+        <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
             <div className="admin-modal-header">
-              <h2>{isEditMode ? 'Sửa Mã Khuyến Mãi' : 'Thêm Mã Khuyến Mãi'}</h2>
-              <button className="admin-modal-close" onClick={() => setIsModalOpen(false)}><i className="fas fa-times"></i></button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <IoTicketOutline style={{ color: 'var(--admin-primary)', fontSize: '1.4rem' }} />
+                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{isEditMode ? 'Sửa Mã Khuyến Mãi' : 'Tạo Mã Khuyến Mãi Mới'}</h2>
+              </div>
+              <button type="button" className="admin-modal-close" onClick={() => setIsModalOpen(false)}>
+                <IoCloseOutline />
+              </button>
             </div>
+
             <form onSubmit={handleSave} className="admin-modal-body">
               {errorMsg && <div className="admin-alert error">{errorMsg}</div>}
 
-              <div className="form-group">
-                <label>Mã Khuyến Mãi (CODE) *</label>
-                <input type="text" name="code" value={formData.code} onChange={handleInputChange} style={{textTransform: 'uppercase'}} required />
-              </div>
-
               <div className="form-group-grid">
                 <div className="form-group">
-                  <label>Số Tiền Giảm (VND) *</label>
-                  <input type="number" name="discountAmount" value={formData.discountAmount} onChange={handleInputChange} required min="0" />
+                  <label>Mã Code (In hoa, viết liền) *</label>
+                  <input
+                    type="text"
+                    name="code"
+                    value={formData.code}
+                    onChange={e => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase().trim() }))}
+                    placeholder="VD: PZ100K, SALE50"
+                    required
+                  />
                 </div>
                 <div className="form-group">
-                  <label>Điểm Cần Để Đổi *</label>
-                  <input type="number" name="pointsRequired" value={formData.pointsRequired} onChange={handleInputChange} required min="0" />
+                  <label>Mức Giảm Giá (VND) *</label>
+                  <input
+                    type="number"
+                    name="discountAmount"
+                    value={formData.discountAmount}
+                    onChange={handleInputChange}
+                    min="1000"
+                    required
+                  />
                 </div>
               </div>
 
               <div className="form-group">
-                <label>Mô Tả</label>
-                <input type="text" name="description" value={formData.description} onChange={handleInputChange} placeholder="VD: Giảm giá ngày nhà giáo..." />
+                <label>Số Điểm PhoneZone Rewards Cần Đổi</label>
+                <input
+                  type="number"
+                  name="pointsRequired"
+                  value={formData.pointsRequired}
+                  onChange={handleInputChange}
+                  min="0"
+                  placeholder="0 nếu là mã công khai cho tất cả"
+                />
               </div>
 
-              <div className="form-group" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleInputChange} id="isActiveCoupon" style={{width: 'auto'}} />
-                <label htmlFor="isActiveCoupon" style={{marginBottom: 0, textTransform: 'none', fontSize: '0.9rem', color: 'var(--admin-text-main)'}}>Kích hoạt mã này (Cho phép sử dụng)</label>
+              <div className="form-group">
+                <label>Mô Tả / Điều Kiện Áp Dụng</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows="3"
+                  placeholder="VD: Giảm ngay 100.000đ cho đơn hàng điện thoại từ 5 triệu..."
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--admin-border)', outline: 'none', background: 'var(--admin-bg)', color: 'var(--admin-text-main)', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div className="form-checkbox-row">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleInputChange}
+                  id="couponIsActive"
+                />
+                <label htmlFor="couponIsActive">
+                  Kích hoạt mã (Cho phép khách hàng nhìn thấy và đổi thưởng)
+                </label>
               </div>
 
               <div className="admin-modal-footer">
-                <button type="button" className="admin-btn-secondary" onClick={() => setIsModalOpen(false)}>Hủy</button>
-                <button type="submit" className="admin-btn-primary">Lưu Mã</button>
+                <button type="button" className="admin-btn-secondary" onClick={() => setIsModalOpen(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className="admin-btn-primary">
+                  <IoCheckmarkCircleOutline style={{ fontSize: '1.1rem' }} />
+                  {isEditMode ? 'Lưu Thay Đổi' : 'Tạo Coupon'}
+                </button>
               </div>
             </form>
           </div>

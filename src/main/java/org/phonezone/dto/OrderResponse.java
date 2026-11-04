@@ -15,6 +15,7 @@ public class OrderResponse {
     public Long totalAmount;
     public Long discountAmount;
     public Long finalAmount;
+    public Long shippingFee;
     public String paymentMethod;
     public String status;
     public Integer earnedPoints;
@@ -50,6 +51,7 @@ public class OrderResponse {
         dto.totalAmount = order.totalAmount;
         dto.discountAmount = order.discountAmount;
         dto.finalAmount = order.finalAmount;
+        dto.shippingFee = order.shippingFee == null ? 0L : order.shippingFee;
         dto.paymentMethod = order.paymentMethod;
         dto.status = order.status;
         dto.earnedPoints = order.earnedPoints;

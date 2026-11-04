@@ -1,6 +1,5 @@
 package org.phonezone.controller;
 
-import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -14,8 +13,7 @@ import java.util.Map;
 @Path("/api/admin/coupons")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-// @RolesAllowed("admin") // Nếu có role admin thì bật, tạm thời dùng Authenticated
-@Authenticated
+@RolesAllowed("ROLE_ADMIN")
 public class AdminCouponController {
 
     @Inject

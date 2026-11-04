@@ -20,6 +20,13 @@ public class AdminProductController {
     @Inject
     ProductService productService;
 
+    @GET
+    public Response listProducts(@QueryParam("page") @DefaultValue("0") int page,
+                                 @QueryParam("size") @DefaultValue("100") int size,
+                                 @QueryParam("q") String keyword) {
+        return Response.ok(productService.getProducts(null, null, null, null, "default", page, size, keyword, true)).build();
+    }
+
     @POST
     public Response createProduct(@Valid Product product) {
         Product created = productService.createProduct(product);

@@ -46,7 +46,7 @@ public class RewardService {
 
     @Transactional
     public UserCoupon redeemCoupon(String username, Long couponId) {
-        User user = User.find("username", username).firstResult();
+        User user = User.find("username", username).withLock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE).firstResult();
         Coupon coupon = Coupon.findById(couponId);
 
         if (user == null || coupon == null || !coupon.isActive) {

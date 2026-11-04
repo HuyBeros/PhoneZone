@@ -7,13 +7,17 @@ import { fetchApi } from '../api/apiClient';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { cart, cartTotal, fetchCart } = useCart();
+  const { cart, cartTotal, fetchCart, loading: cartLoading, error: cartError } = useCart();
   const { appliedCoupon, markCouponUsed } = usePoints();
   
-  const total = cartTotal || 0;
-  const shippingFee = total > 10000000 ? 0 : 50000;
-  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const finalTotal = Math.max(0, total + shippingFee - discountAmount);
+  const [quote, setQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(true);
+  const [quoteError, setQuoteError] = useState('');
+  const [quoteRetry, setQuoteRetry] = useState(0);
+  const total = quote?.totalAmount ?? cartTotal ?? 0;
+  const shippingFee = quote?.shippingFee ?? 0;
+  const discountAmount = quote?.discountAmount ?? 0;
+  const finalTotal = quote?.finalAmount ?? 0;
 
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', note: '', paymentMethod: 'COD' });
   const [isSuccess, setIsSuccess] = useState(false);
@@ -22,13 +26,30 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (cart.length === 0 && !isSuccess) {
+    if (!cartLoading && !cartError && cart.length === 0 && !isSuccess) {
       navigate('/brand/all');
     }
-  }, [cart, isSuccess, navigate]);
+  }, [cart, cartLoading, cartError, isSuccess, navigate]);
+
+  useEffect(() => {
+    if (cartLoading || !cart.length || isSuccess) return;
+    const controller = new AbortController();
+    let active = true;
+    setQuote(null);
+    setQuoteError('');
+    setQuoteLoading(true);
+    fetchApi('/orders/quote', {
+      method: 'POST', signal: controller.signal,
+      body: JSON.stringify({ couponCode: appliedCoupon?.code, paymentMethod: formData.paymentMethod }),
+    }).then(data => { if (active) setQuote(data); })
+      .catch(error => { if (active && error.name !== 'AbortError') setQuoteError(error.message); })
+      .finally(() => { if (active) setQuoteLoading(false); });
+    return () => { active = false; controller.abort(); };
+  }, [cart, cartLoading, appliedCoupon?.code, formData.paymentMethod, quoteRetry, isSuccess]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!quote || quoteLoading || quoteError) return;
     setLoading(true);
     setErrorMsg('');
 
@@ -50,13 +71,13 @@ export default function CheckoutPage() {
       if (appliedCoupon) {
         markCouponUsed();
       }
-      fetchCart(); // Xóa giỏ hàng local bằng cách fetch lại (Backend đã clear giỏ hàng)
       
       if (res && res.paymentUrl) {
         window.location.href = res.paymentUrl;
       } else {
         setIsSuccess(true);
       }
+      fetchCart();
     } catch (err) {
       setErrorMsg(err.message || 'Lỗi đặt hàng');
     } finally {
@@ -79,6 +100,8 @@ export default function CheckoutPage() {
     );
   }
 
+  if (cartLoading && !cart.length) return <div className="container catalog-status" role="status">Đang tải giỏ hàng...</div>;
+  if (cartError) return <div className="container catalog-error" role="alert">{cartError} <button className="btn btn-outline" onClick={fetchCart}>Thử lại</button></div>;
   if (cart.length === 0) return null;
 
   return (
@@ -166,15 +189,17 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
-              <div className="summary-totals">
+              {quoteError && <div className="catalog-error" role="alert">{quoteError} <button type="button" className="btn btn-outline" onClick={() => setQuoteRetry(value => value + 1)}>Thử lại</button></div>}
+              {quoteLoading && <p role="status">Đang tính tổng tiền...</p>}
+              <div className="summary-totals" aria-busy={quoteLoading}>
                 <div className="total-row"><span>Tạm tính</span><span>{fmt(total)}</span></div>
                 <div className="total-row"><span>Phí giao hàng</span><span>{shippingFee === 0 ? 'Miễn phí' : fmt(shippingFee)}</span></div>
                 {discountAmount > 0 && (
                   <div className="total-row discount"><span>Giảm giá</span><span>-{fmt(discountAmount)}</span></div>
                 )}
-                <div className="total-row final"><span>Tổng cộng</span><span>{fmt(finalTotal)}</span></div>
+                <div className="total-row final"><span>Tổng cộng</span><span>{quote ? fmt(finalTotal) : '—'}</span></div>
               </div>
-              <button form="checkoutForm" type="submit" className="btn-place-order" disabled={loading}>
+              <button form="checkoutForm" type="submit" className="btn-place-order" disabled={loading || cartLoading || quoteLoading || !quote || !!quoteError}>
                 {loading ? 'ĐANG XỬ LÝ...' : 'XÁC NHẬN ĐẶT HÀNG'}
               </button>
             </div>

@@ -3,3 +3,17 @@ target/
 .idea/
 .vscode/
 node_modules/
+**/node_modules/
+**/dist/
+.quinoa/
+.local/
+.env
+.env.*
+*.pem
+**/*.pem
+.agents/
+.codex/
+docs/
+db_seed*.sql
+*.log
+README*

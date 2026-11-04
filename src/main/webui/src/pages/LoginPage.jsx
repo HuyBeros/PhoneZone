@@ -2,19 +2,23 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../store/AuthContext';
 import { useToast } from '../store/ToastContext';
-
-const FEATURES = [
-  { icon: 'fa-gift',          color: '#f0a500', bg: 'rgba(240,165,0,.15)',        text: 'Tích điểm đổi quà mỗi đơn hàng' },
-  { icon: 'fa-rocket',        color: '#0ea5e9', bg: 'rgba(14,165,233,.15)',        text: 'Giao hàng siêu tốc trong 2 giờ' },
-  { icon: 'fa-shield-halved', color: '#10b981', bg: 'rgba(16,185,129,.15)',        text: 'Bảo mật thông tin tuyệt đối' },
-  { icon: 'fa-headset',       color: '#a78bfa', bg: 'rgba(167,139,250,.15)',       text: 'Hỗ trợ 24/7 từ đội ngũ chuyên gia' },
-];
-
-const STATS = [
-  { icon: 'fa-box-open',   value: '50K+',  label: 'Sản phẩm' },
-  { icon: 'fa-users',      value: '200K+', label: 'Khách hàng' },
-  { icon: 'fa-star',       value: '4.9',   label: 'Đánh giá' },
-];
+import {
+  IoPhonePortraitOutline,
+  IoSparkles,
+  IoPersonOutline,
+  IoLockClosedOutline,
+  IoEyeOutline,
+  IoEyeOffOutline,
+  IoArrowBackOutline,
+  IoLogInOutline,
+  IoPersonAddOutline,
+  IoReloadOutline,
+  IoAlertCircleOutline,
+  IoCheckmarkCircleOutline,
+  IoCloseCircleOutline,
+  IoMailOutline,
+  IoCallOutline,
+} from 'react-icons/io5';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -26,7 +30,9 @@ export default function LoginPage() {
 
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [loginError, setLoginError] = useState(location.state?.sessionExpired
+    ? 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
+    : '');
   const [showLoginPwd, setShowLoginPwd] = useState(false);
 
   const [regForm, setRegForm] = useState({ username: '', email: '', password: '', confirmPassword: '', fullName: '', phone: '' });
@@ -37,7 +43,7 @@ export default function LoginPage() {
   const [showRegConfirm, setShowRegConfirm] = useState(false);
 
   const from = location.state?.from || '/';
-  useEffect(() => { if (user) navigate(from, { replace: true }); }, [user]);
+  useEffect(() => { if (user) navigate(from, { replace: true }); }, [user, navigate, from]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -73,104 +79,116 @@ export default function LoginPage() {
         email: regForm.email.trim(),
         password: regForm.password,
         fullName: regForm.fullName.trim(),
-        phone: regForm.phone.trim() || undefined,
+        phone: regForm.phone.trim(),
       });
       setRegSuccess(true);
-      showToast('Đăng ký thành công! Hãy đăng nhập để tiếp tục.', 'success');
+      showToast('Tạo tài khoản thành công! Đang chuyển sang đăng nhập...', 'success');
       setTimeout(() => {
         setTab('login');
         setLoginForm({ username: regForm.username.trim(), password: '' });
         setRegSuccess(false);
-        setRegForm({ username: '', email: '', password: '', confirmPassword: '', fullName: '', phone: '' });
       }, 1500);
     } catch (err) {
-      setRegError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      setRegError(err.message || 'Đăng ký thất bại. Tên đăng nhập hoặc email có thể đã tồn tại.');
     } finally {
       setRegLoading(false);
     }
   };
 
-  const pwdStrength = (pwd) => {
+  // Password strength checker
+  const getPasswordStrength = (pwd) => {
     if (!pwd) return null;
-    let s = 0;
-    if (pwd.length >= 6) s++;
-    if (pwd.length >= 10) s++;
-    if (/[A-Z]/.test(pwd)) s++;
-    if (/[0-9]/.test(pwd)) s++;
-    if (/[^A-Za-z0-9]/.test(pwd)) s++;
-    if (s <= 1) return { label: 'Yếu',      color: '#ef4444', width: '25%' };
-    if (s <= 2) return { label: 'Trung bình', color: '#f59e0b', width: '50%' };
-    if (s <= 3) return { label: 'Khá',       color: '#0ea5e9', width: '75%' };
-    return             { label: 'Mạnh',      color: '#16a34a', width: '100%' };
+    let score = 0;
+    if (pwd.length >= 6)  score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    if (score <= 2) return { label: 'Yếu', color: '#ef4444', width: '30%' };
+    if (score <= 4) return { label: 'Trung bình', color: '#f59e0b', width: '65%' };
+    return { label: 'Mạnh', color: '#10b981', width: '100%' };
   };
-  const strength = pwdStrength(regForm.password);
+
+  const strength = getPasswordStrength(regForm.password);
 
   return (
     <div className="auth-page">
-      {/* Decorative background */}
+      {/* Nền hiệu ứng nhẹ */}
       <div className="auth-bg">
         <div className="auth-bg-blob auth-bg-blob-1"></div>
         <div className="auth-bg-blob auth-bg-blob-2"></div>
       </div>
 
       <div className="auth-container">
-        {/* ── LEFT PANEL ── */}
+
+        {/* ── BANNER TRÁI (Thiết kế đơn giản, ít thông tin & tinh tế) ── */}
         <div className="auth-left">
-          {/* Decorative rings */}
           <div className="auth-ring auth-ring-1"></div>
           <div className="auth-ring auth-ring-2"></div>
 
-          <div className="auth-left-inner">
-            {/* Logo */}
-            <Link to="/" className="auth-logo">
-              <span className="auth-logo-icon"><i className="fas fa-mobile-screen-button"></i></span>
-              Phone<span>Zone</span>
-            </Link>
+          {/* Logo PhoneZone */}
+          <Link to="/" className="auth-logo">
+            <div className="auth-logo-icon">
+              <IoPhonePortraitOutline style={{ fontSize: '1.25rem' }} />
+            </div>
+            <span>PhoneZone</span>
+          </Link>
 
-            <h2 className="auth-left-title">
-              {tab === 'login' ? 'Chào mừng trở lại!' : 'Tham gia PhoneZone'}
-            </h2>
-            <p className="auth-left-sub">
-              {tab === 'login'
-                ? 'Đăng nhập để mua sắm, theo dõi đơn hàng và nhận ưu đãi độc quyền dành riêng cho bạn.'
-                : 'Tạo tài khoản miễn phí và nhận ngay 100 điểm thưởng chào mừng.'}
-            </p>
-
-            {/* Feature list */}
-            <div className="auth-features">
-              {FEATURES.map((f, i) => (
-                <div className="auth-feature-item" key={i}>
-                  <span className="auth-feature-icon" style={{ background: f.bg, color: f.color }}>
-                    <i className={`fas ${f.icon}`}></i>
-                  </span>
-                  <span>{f.text}</span>
-                </div>
-              ))}
+          {/* Thông điệp chính ngắn gọn, tinh tế */}
+          <div className="auth-left-body">
+            <div className="auth-badge-pill">
+              <IoSparkles style={{ color: '#38bdf8', marginRight: 6 }} />
+              <span>Chính hãng 100%</span>
             </div>
 
+            <h2 className="auth-left-title">
+              Thế giới công nghệ<br />
+              <span className="auth-title-gradient">chính hãng đỉnh cao.</span>
+            </h2>
 
+            <p className="auth-left-sub">
+              Trải nghiệm mua sắm tiện lợi, quản lý đơn hàng thông minh và nhận trọn vẹn đặc quyền ưu đãi tại PhoneZone.
+            </p>
+          </div>
 
-            <Link to="/" className="auth-back-home">
-              <i className="fas fa-arrow-left"></i> Về trang chủ
-            </Link>
+          {/* 3 cam kết nhỏ gọn ở chân banner */}
+          <div className="auth-commit-pills">
+            <span className="auth-commit-item">✓ Giao nhanh 2h</span>
+            <span className="auth-commit-item">✓ Đổi trả 30 ngày</span>
+            <span className="auth-commit-item">✓ Trả góp 0%</span>
           </div>
         </div>
 
-        {/* ── RIGHT PANEL ── */}
+        {/* ── FORM PHẢI (Đăng nhập / Đăng ký) ── */}
         <div className="auth-right">
-          {/* Tabs */}
-          <div className="auth-tabs">
+          <div className="auth-right-top">
+            <Link to="/" className="auth-back-link">
+              <IoArrowBackOutline style={{ fontSize: '1.05rem' }} />
+              <span>Về trang chủ</span>
+            </Link>
+          </div>
+
+          {/* Tab buttons */}
+          <div className="auth-tabs" role="tablist">
             <button
-              className={`auth-tab${tab === 'login' ? ' active' : ''}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === 'login'}
+              className={`auth-tab ${tab === 'login' ? 'active' : ''}`}
               onClick={() => { setTab('login'); setLoginError(''); }}
             >
-              <i className="fas fa-right-to-bracket"></i> Đăng nhập
+              <IoLogInOutline style={{ fontSize: '1.1rem' }} />
+              <span>Đăng nhập</span>
             </button>
             <button
-              className={`auth-tab${tab === 'register' ? ' active' : ''}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === 'register'}
+              className={`auth-tab ${tab === 'register' ? 'active' : ''}`}
               onClick={() => { setTab('register'); setRegError(''); }}
             >
-              <i className="fas fa-user-plus"></i> Đăng ký
+              <IoPersonAddOutline style={{ fontSize: '1.1rem' }} />
+              <span>Đăng ký</span>
             </button>
           </div>
 
@@ -178,23 +196,21 @@ export default function LoginPage() {
           {tab === 'login' && (
             <form className="auth-form" onSubmit={handleLogin} noValidate>
               <div className="auth-form-header">
-                <h3>Đăng nhập tài khoản</h3>
-                <p>Nhập thông tin của bạn để tiếp tục mua sắm</p>
+                <h3>Đăng nhập</h3>
+                <p>Chào mừng bạn trở lại với PhoneZone</p>
               </div>
 
               {loginError && (
                 <div className="auth-alert auth-alert-error">
-                  <i className="fas fa-circle-exclamation"></i>
+                  <IoAlertCircleOutline style={{ fontSize: '1.2rem', flexShrink: 0 }} />
                   <span>{loginError}</span>
                 </div>
               )}
 
               <div className="auth-field">
-                <label htmlFor="login-username">
-                  <i className="fas fa-user"></i> Tên đăng nhập
-                </label>
+                <label htmlFor="login-username">Tên đăng nhập</label>
                 <div className="auth-input-wrap">
-                  <i className="fas fa-user auth-input-icon"></i>
+                  <IoPersonOutline className="auth-input-icon" />
                   <input
                     id="login-username"
                     type="text"
@@ -208,11 +224,9 @@ export default function LoginPage() {
               </div>
 
               <div className="auth-field">
-                <label htmlFor="login-password">
-                  <i className="fas fa-lock"></i> Mật khẩu
-                </label>
+                <label htmlFor="login-password">Mật khẩu</label>
                 <div className="auth-input-wrap">
-                  <i className="fas fa-lock auth-input-icon"></i>
+                  <IoLockClosedOutline className="auth-input-icon" />
                   <input
                     id="login-password"
                     type={showLoginPwd ? 'text' : 'password'}
@@ -228,22 +242,29 @@ export default function LoginPage() {
                     tabIndex={-1}
                     aria-label={showLoginPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                   >
-                    <i className={`fas ${showLoginPwd ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    {showLoginPwd ? <IoEyeOffOutline /> : <IoEyeOutline />}
                   </button>
                 </div>
               </div>
 
               <button type="submit" className="auth-submit-btn" disabled={loginLoading}>
-                {loginLoading
-                  ? <><i className="fas fa-spinner fa-spin"></i> Đang đăng nhập...</>
-                  : <><i className="fas fa-right-to-bracket"></i> Đăng nhập</>
-                }
+                {loginLoading ? (
+                  <>
+                    <IoReloadOutline className="fa-spin" style={{ marginRight: 6 }} />
+                    <span>Đang đăng nhập...</span>
+                  </>
+                ) : (
+                  <>
+                    <IoLogInOutline style={{ fontSize: '1.2rem', marginRight: 6 }} />
+                    <span>Đăng nhập</span>
+                  </>
+                )}
               </button>
 
               <p className="auth-switch-hint">
                 Chưa có tài khoản?{' '}
                 <button type="button" className="auth-link-btn" onClick={() => setTab('register')}>
-                  Đăng ký ngay
+                  Đăng ký tài khoản mới
                 </button>
               </p>
             </form>
@@ -253,19 +274,19 @@ export default function LoginPage() {
           {tab === 'register' && (
             <form className="auth-form" onSubmit={handleRegister} noValidate>
               <div className="auth-form-header">
-                <h3>Tạo tài khoản mới</h3>
-                <p>Điền thông tin bên dưới để bắt đầu hành trình mua sắm</p>
+                <h3>Tạo tài khoản</h3>
+                <p>Bắt đầu hành trình mua sắm cùng PhoneZone</p>
               </div>
 
               {regError && (
                 <div className="auth-alert auth-alert-error">
-                  <i className="fas fa-circle-exclamation"></i>
+                  <IoAlertCircleOutline style={{ fontSize: '1.2rem', flexShrink: 0 }} />
                   <span>{regError}</span>
                 </div>
               )}
               {regSuccess && (
                 <div className="auth-alert auth-alert-success">
-                  <i className="fas fa-circle-check"></i>
+                  <IoCheckmarkCircleOutline style={{ fontSize: '1.2rem', flexShrink: 0 }} />
                   <span>Đăng ký thành công! Đang chuyển sang đăng nhập...</span>
                 </div>
               )}
@@ -273,12 +294,13 @@ export default function LoginPage() {
               <div className="auth-field-row">
                 <div className="auth-field">
                   <label htmlFor="reg-fullname">
-                    <i className="fas fa-id-card"></i> Họ và tên <span className="auth-required">*</span>
+                    Họ và tên <span className="auth-required">*</span>
                   </label>
                   <div className="auth-input-wrap">
-                    <i className="fas fa-id-card auth-input-icon"></i>
+                    <IoPersonOutline className="auth-input-icon" />
                     <input
                       id="reg-fullname"
+                      maxLength={100}
                       type="text"
                       placeholder="Nguyễn Văn A"
                       value={regForm.fullName}
@@ -289,13 +311,12 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="auth-field">
-                  <label htmlFor="reg-phone">
-                    <i className="fas fa-phone"></i> Số điện thoại
-                  </label>
+                  <label htmlFor="reg-phone">Số điện thoại</label>
                   <div className="auth-input-wrap">
-                    <i className="fas fa-phone auth-input-icon"></i>
+                    <IoCallOutline className="auth-input-icon" />
                     <input
                       id="reg-phone"
+                      maxLength={20}
                       type="tel"
                       placeholder="0912 345 678"
                       value={regForm.phone}
@@ -308,12 +329,13 @@ export default function LoginPage() {
 
               <div className="auth-field">
                 <label htmlFor="reg-username">
-                  <i className="fas fa-user"></i> Tên đăng nhập <span className="auth-required">*</span>
+                  Tên đăng nhập <span className="auth-required">*</span>
                 </label>
                 <div className="auth-input-wrap">
-                  <i className="fas fa-user auth-input-icon"></i>
+                  <IoPersonOutline className="auth-input-icon" />
                   <input
                     id="reg-username"
+                    maxLength={50}
                     type="text"
                     placeholder="Tối thiểu 3 ký tự"
                     value={regForm.username}
@@ -325,12 +347,13 @@ export default function LoginPage() {
 
               <div className="auth-field">
                 <label htmlFor="reg-email">
-                  <i className="fas fa-envelope"></i> Email <span className="auth-required">*</span>
+                  Email <span className="auth-required">*</span>
                 </label>
                 <div className="auth-input-wrap">
-                  <i className="fas fa-envelope auth-input-icon"></i>
+                  <IoMailOutline className="auth-input-icon" />
                   <input
                     id="reg-email"
+                    maxLength={100}
                     type="email"
                     placeholder="example@email.com"
                     value={regForm.email}
@@ -343,10 +366,10 @@ export default function LoginPage() {
               <div className="auth-field-row">
                 <div className="auth-field">
                   <label htmlFor="reg-password">
-                    <i className="fas fa-lock"></i> Mật khẩu <span className="auth-required">*</span>
+                    Mật khẩu <span className="auth-required">*</span>
                   </label>
                   <div className="auth-input-wrap">
-                    <i className="fas fa-lock auth-input-icon"></i>
+                    <IoLockClosedOutline className="auth-input-icon" />
                     <input
                       id="reg-password"
                       type={showRegPwd ? 'text' : 'password'}
@@ -360,8 +383,9 @@ export default function LoginPage() {
                       className="auth-pwd-toggle"
                       onClick={() => setShowRegPwd(p => !p)}
                       tabIndex={-1}
+                      aria-label={showRegPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                     >
-                      <i className={`fas ${showRegPwd ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      {showRegPwd ? <IoEyeOffOutline /> : <IoEyeOutline />}
                     </button>
                   </div>
                   {strength && (
@@ -375,10 +399,10 @@ export default function LoginPage() {
                 </div>
                 <div className="auth-field">
                   <label htmlFor="reg-confirm">
-                    <i className="fas fa-lock"></i> Xác nhận mật khẩu <span className="auth-required">*</span>
+                    Xác nhận mật khẩu <span className="auth-required">*</span>
                   </label>
                   <div className="auth-input-wrap">
-                    <i className="fas fa-lock auth-input-icon"></i>
+                    <IoLockClosedOutline className="auth-input-icon" />
                     <input
                       id="reg-confirm"
                       type={showRegConfirm ? 'text' : 'password'}
@@ -392,14 +416,22 @@ export default function LoginPage() {
                       className="auth-pwd-toggle"
                       onClick={() => setShowRegConfirm(p => !p)}
                       tabIndex={-1}
+                      aria-label={showRegConfirm ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                     >
-                      <i className={`fas ${showRegConfirm ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      {showRegConfirm ? <IoEyeOffOutline /> : <IoEyeOutline />}
                     </button>
                   </div>
                   {regForm.confirmPassword && (
                     <div className={`auth-match-hint ${regForm.password === regForm.confirmPassword ? 'match' : 'no-match'}`}>
-                      <i className={`fas ${regForm.password === regForm.confirmPassword ? 'fa-circle-check' : 'fa-circle-xmark'}`}></i>
-                      {regForm.password === regForm.confirmPassword ? ' Mật khẩu khớp' : ' Chưa khớp'}
+                      {regForm.password === regForm.confirmPassword ? (
+                        <>
+                          <IoCheckmarkCircleOutline style={{ color: '#16a34a' }} /> Mật khẩu khớp
+                        </>
+                      ) : (
+                        <>
+                          <IoCloseCircleOutline style={{ color: '#ef4444' }} /> Chưa khớp
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -417,12 +449,22 @@ export default function LoginPage() {
                 className="auth-submit-btn"
                 disabled={regLoading || regSuccess}
               >
-                {regLoading
-                  ? <><i className="fas fa-spinner fa-spin"></i> Đang đăng ký...</>
-                  : regSuccess
-                    ? <><i className="fas fa-circle-check"></i> Đăng ký thành công!</>
-                    : <><i className="fas fa-user-plus"></i> Tạo tài khoản</>
-                }
+                {regLoading ? (
+                  <>
+                    <IoReloadOutline className="fa-spin" style={{ marginRight: 6 }} />
+                    <span>Đang đăng ký...</span>
+                  </>
+                ) : regSuccess ? (
+                  <>
+                    <IoCheckmarkCircleOutline style={{ marginRight: 6 }} />
+                    <span>Đăng ký thành công!</span>
+                  </>
+                ) : (
+                  <>
+                    <IoPersonAddOutline style={{ fontSize: '1.2rem', marginRight: 6 }} />
+                    <span>Tạo tài khoản</span>
+                  </>
+                )}
               </button>
 
               <p className="auth-switch-hint">

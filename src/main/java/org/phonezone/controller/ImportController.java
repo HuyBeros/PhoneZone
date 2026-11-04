@@ -3,12 +3,14 @@ package org.phonezone.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.inject.Inject;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.phonezone.dto.ProductImportDto;
 import org.phonezone.entity.Product;
+import org.phonezone.service.ProductCatalogCache;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -17,11 +19,15 @@ import java.util.List;
 import java.util.Map;
 
 @Path("/api/import")
+@RolesAllowed("ROLE_ADMIN")
 @Produces(MediaType.APPLICATION_JSON)
 public class ImportController {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    ProductCatalogCache catalogCache;
 
     /**
      * Import sản phẩm từ file JSON vào database.
@@ -31,6 +37,7 @@ public class ImportController {
     @Path("/products")
     @Transactional
     public Response importProducts() {
+        catalogCache.invalidateAfterCommit();
         try {
             File jsonFile = new File("mobilecity_20260427_120149.json");
 
@@ -107,6 +114,7 @@ public class ImportController {
     @Transactional
     public Response clearProducts() {
         long deleted = Product.deleteAll();
+        if (deleted > 0) catalogCache.invalidateAfterCommit();
         return Response.ok(Map.of(
             "message", "Đã xóa toàn bộ sản phẩm",
             "deleted", deleted
@@ -121,6 +129,7 @@ public class ImportController {
     @Path("/tablets")
     @Transactional
     public Response importTablets() {
+        catalogCache.invalidateAfterCommit();
         try {
             File jsonFile = new File("tablets.json");
 

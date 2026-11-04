@@ -1,6 +1,8 @@
 package org.phonezone.service;
 
 import io.smallrye.jwt.build.Jwt;
+import io.quarkus.elytron.security.common.BcryptUtil;
+import java.nio.charset.StandardCharsets;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import org.phonezone.dto.LoginRequest;
@@ -49,6 +51,7 @@ public class AuthService {
      * Đăng nhập – kiểm tra username + password, trả về JWT token.
      * @return JWT token string, hoặc null nếu sai thông tin.
      */
+    @Transactional
     public String login(LoginRequest request) {
         User user = User.find("username", request.username).firstResult();
         if (user == null) {
@@ -56,9 +59,13 @@ public class AuthService {
         }
 
         // So sánh hash
-        String inputHash = hashPassword(request.password);
-        if (!inputHash.equals(user.passwordHash)) {
+        if (!verifyPassword(request.password, user.passwordHash)) {
             return null;
+        }
+
+        // Upgrade legacy SHA-256 after a valid login without changing the password.
+        if (!user.passwordHash.startsWith("$2") && request.password.getBytes(StandardCharsets.UTF_8).length <= 72) {
+            user.passwordHash = hashPassword(request.password);
         }
 
         // Tạo JWT token
@@ -87,13 +94,25 @@ public class AuthService {
     }
 
     /**
-     * Hash mật khẩu bằng SHA-256.
+     * Salted password hash for new and upgraded credentials.
      */
     public String hashPassword(String password) {
+        if (password == null || password.length() < 6 || password.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new jakarta.ws.rs.BadRequestException("Mật khẩu phải từ 6 ký tự và tối đa 72 byte UTF-8");
+        }
+        return BcryptUtil.bcryptHash(password);
+    }
+
+    public boolean verifyPassword(String password, String storedHash) {
+        if (password == null || storedHash == null) return false;
+        if (storedHash.startsWith("$2")) {
+            if (password.getBytes(StandardCharsets.UTF_8).length > 72) return false;
+            return BcryptUtil.matches(password, storedHash);
+        }
+        if (!storedHash.matches("[a-fA-F0-9]{64}")) return false;
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(password.getBytes());
-            return HexFormat.of().formatHex(hash);
+            return MessageDigest.isEqual(md.digest(password.getBytes(StandardCharsets.UTF_8)), HexFormat.of().parseHex(storedHash));
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 không khả dụng", e);
         }

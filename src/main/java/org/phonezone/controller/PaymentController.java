@@ -28,6 +28,9 @@ public class PaymentController {
     @Path("/vnpay-return")
     @Transactional
     public Response vnpayReturn(@Context UriInfo uriInfo) {
+        if (!vnPayConfig.isConfigured()) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+        }
         Map<String, String> fields = new HashMap<>();
         for (Map.Entry<String, java.util.List<String>> entry : uriInfo.getQueryParameters().entrySet()) {
             String fieldName = URLEncoder.encode(entry.getKey(), StandardCharsets.US_ASCII);

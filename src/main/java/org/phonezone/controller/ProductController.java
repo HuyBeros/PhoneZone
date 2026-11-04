@@ -4,8 +4,8 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.phonezone.entity.Product;
-import org.phonezone.service.ProductService;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.phonezone.service.ProductCatalogService;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +15,7 @@ import java.util.Map;
 public class ProductController {
 
     @Inject
-    ProductService productService;
+    ProductCatalogService catalog;
 
     /**
      * Lấy danh sách sản phẩm – hỗ trợ lọc, sắp xếp, phân trang.
@@ -29,9 +29,10 @@ public class ProductController {
             @QueryParam("maxPrice") Long maxPrice,
             @QueryParam("sort") @DefaultValue("default") String sort,
             @QueryParam("page") @DefaultValue("0") int page,
-            @QueryParam("size") @DefaultValue("100") int size
+            @QueryParam("size") @DefaultValue("100") int size,
+            @QueryParam("q") String keyword
     ) {
-        Map<String, Object> result = productService.getProducts(brand, category, minPrice, maxPrice, sort, page, size);
+        JsonNode result = catalog.list(brand, category, minPrice, maxPrice, sort, page, size, keyword);
         return Response.ok(result).build();
     }
 
@@ -42,7 +43,7 @@ public class ProductController {
     @GET
     @Path("/{id}")
     public Response getProduct(@PathParam("id") Long id) {
-        Product product = productService.getProductById(id);
+        JsonNode product = catalog.detail(id);
         if (product == null) {
             return Response.status(404)
                     .entity(Map.of("error", "Không tìm thấy sản phẩm với ID: " + id))
@@ -64,7 +65,7 @@ public class ProductController {
         if (keyword == null || keyword.trim().length() < 2) {
             return Response.ok(List.of()).build();
         }
-        List<Product> results = productService.searchProducts(keyword, limit);
+        JsonNode results = catalog.search(keyword, limit);
         return Response.ok(results).build();
     }
 
@@ -75,7 +76,7 @@ public class ProductController {
     @GET
     @Path("/brands")
     public Response getBrands() {
-        List<String> brands = productService.getAllBrands();
+        JsonNode brands = catalog.brands();
         return Response.ok(brands).build();
     }
 }

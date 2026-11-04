@@ -1,16 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import './index.css';
+import './responsive.css';
 import { AuthProvider } from './store/AuthContext.jsx';
+import { getLegacyRoute } from './utils/routing.js';
+
+const legacyRoute = getLegacyRoute(window.location.href);
+if (legacyRoute) window.history.replaceState(window.history.state, '', legacyRoute);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <HashRouter>
+    <BrowserRouter>
       <AuthProvider>
         <App />
       </AuthProvider>
-    </HashRouter>
+    </BrowserRouter>
   </React.StrictMode>
 );

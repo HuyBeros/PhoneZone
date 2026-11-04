@@ -42,9 +42,11 @@ export function PointsProvider({ children }) {
       }
 
       const pData = await fetchApi('/rewards/points');
+      if (localStorage.getItem('pz_token') !== token) return;
       if (pData) setPoints(pData.points);
 
       const cData = await fetchApi('/rewards/coupons/my');
+      if (localStorage.getItem('pz_token') !== token) return;
       if (cData) {
         setCoupons(cData.map(c => ({
           ...c,
@@ -55,6 +57,12 @@ export function PointsProvider({ children }) {
     } catch (e) {
       console.error("Lỗi lấy điểm/coupon", e);
     }
+  }, [token]);
+
+  useEffect(() => {
+    setPoints(0);
+    setCoupons([]);
+    setAppliedCoupon(null);
   }, [token]);
 
   useEffect(() => {
