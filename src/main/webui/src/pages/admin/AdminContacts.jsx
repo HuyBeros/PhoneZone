@@ -1,3 +1,5 @@
+import { useAdminFeedback } from '../../store/AdminFeedbackContext';
+import { useToast } from '../../store/ToastContext';
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../api/apiClient';
 import {
@@ -18,10 +20,13 @@ const CONTACT_STATUS_MAP = {
 };
 
 export default function AdminContacts() {
+  const { confirmAction } = useAdminFeedback();
+  const { showToast } = useToast();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [updatingId, setUpdatingId] = useState(null);
 
   const loadContacts = async () => {
     setLoading(true);
@@ -29,7 +34,7 @@ export default function AdminContacts() {
       const data = await fetchApi('/admin/contacts');
       setContacts(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      showToast(err.message || 'Không thể tải danh sách tin nhắn.', 'error');
     } finally {
       setLoading(false);
     }
@@ -40,25 +45,33 @@ export default function AdminContacts() {
   }, []);
 
   const updateStatus = async (id, newStatus) => {
+    if (updatingId !== null) return;
+    setUpdatingId(id);
     try {
-      await fetchApi(`/admin/contacts/${id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus })
-      });
-      loadContacts();
-    } catch (e) {
-      alert(e.message || 'Cập nhật trạng thái thất bại');
+      await fetchApi(`/admin/contacts/${id}/status`, { method: 'PUT', body: JSON.stringify({ status: newStatus }) });
+      setContacts(previous => previous.map(item => item.id === id ? { ...item, status: newStatus } : item));
+      showToast(`Đã cập nhật tin nhắn: ${CONTACT_STATUS_MAP[newStatus]?.label || newStatus}.`, 'success');
+    } catch (failure) {
+      showToast(failure.message || 'Cập nhật trạng thái thất bại.', 'error');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const deleteContact = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa tin nhắn này?')) return;
-    try {
-      await fetchApi(`/admin/contacts/${id}`, { method: 'DELETE' });
-      loadContacts();
-    } catch (e) {
-      alert(e.message || 'Xóa tin nhắn thất bại');
-    }
+  const deleteContact = (id) => {
+    const item = contacts.find(entry => entry.id === id);
+    return confirmAction({
+      title: 'Xóa tin nhắn này?',
+      description: 'Kiểm tra thông tin bên dưới trước khi xác nhận xóa.',
+      resource: item?.name || `Tin nhắn #${id}`,
+      note: 'Thao tác xóa không thể hoàn tác.',
+      confirmLabel: 'Xóa tin nhắn',
+      successMessage: 'Đã xóa tin nhắn.',
+      onConfirm: async () => {
+        await fetchApi(`/admin/contacts/${id}`, { method: 'DELETE' });
+        setContacts(previous => previous.filter(item => item.id !== id));
+      },
+    });
   };
 
   const filtered = contacts.filter(c => {
@@ -202,6 +215,8 @@ export default function AdminContacts() {
                       <td>
                         <select
                           value={c.status}
+                          disabled={updatingId !== null}
+                          aria-busy={updatingId === c.id}
                           onChange={(e) => updateStatus(c.id, e.target.value)}
                           className="admin-status-select"
                           style={{ color: st.color, backgroundColor: st.bg, borderColor: st.color }}
@@ -217,6 +232,7 @@ export default function AdminContacts() {
                             type="button"
                             className="admin-action-btn danger"
                             onClick={() => deleteContact(c.id)}
+                            disabled={updatingId !== null}
                             title="Xóa tin nhắn"
                           >
                             <IoTrashOutline />

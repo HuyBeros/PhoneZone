@@ -1,3 +1,5 @@
+import { useAdminFeedback } from '../../store/AdminFeedbackContext';
+import { useToast } from '../../store/ToastContext';
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../api/apiClient';
 import { fmt } from '../../utils/utils';
@@ -14,11 +16,14 @@ import {
 } from 'react-icons/io5';
 
 export default function AdminCoupons() {
+  const { confirmAction } = useAdminFeedback();
+  const { showToast } = useToast();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,7 +44,7 @@ export default function AdminCoupons() {
       const data = await fetchApi('/admin/coupons');
       setCoupons(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to load coupons', err);
+      showToast('Không thể tải danh sách mã khuyến mãi. Vui lòng thử lại.', 'error');
     } finally {
       setLoading(false);
     }
@@ -87,6 +92,8 @@ export default function AdminCoupons() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     setErrorMsg('');
     try {
       if (isEditMode) {
@@ -102,20 +109,28 @@ export default function AdminCoupons() {
       }
       setIsModalOpen(false);
       loadCoupons();
+      showToast(isEditMode ? 'Đã cập nhật mã khuyến mãi.' : 'Đã thêm mã khuyến mãi.', 'success');
     } catch (err) {
       setErrorMsg(err.message || 'Có lỗi xảy ra khi lưu mã giảm giá');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id, code) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa mã "${code}"?`)) {
-      try {
+  const handleDelete = (id) => {
+    const item = coupons.find(entry => entry.id === id);
+    return confirmAction({
+      title: 'Xóa mã khuyến mãi này?',
+      description: 'Kiểm tra thông tin bên dưới trước khi xác nhận xóa.',
+      resource: item?.code || `#${id}`,
+      note: 'Thao tác xóa không thể hoàn tác.',
+      confirmLabel: 'Xóa mã khuyến mãi',
+      successMessage: 'Đã xóa mã khuyến mãi.',
+      onConfirm: async () => {
         await fetchApi(`/admin/coupons/${id}`, { method: 'DELETE' });
-        loadCoupons();
-      } catch (err) {
-        alert(err.message || 'Xóa thất bại');
-      }
-    }
+        setCoupons(previous => previous.filter(entry => entry.id !== id));
+      },
+    });
   };
 
   const filteredCoupons = coupons.filter(c => {
@@ -287,14 +302,14 @@ export default function AdminCoupons() {
 
       {/* Modal Thêm/Sửa */}
       {isModalOpen && (
-        <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div className="admin-modal-overlay" onClick={() => { if (!saving) setIsModalOpen(false); }}>
           <div className="admin-modal" onClick={e => e.stopPropagation()}>
             <div className="admin-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <IoTicketOutline style={{ color: 'var(--admin-primary)', fontSize: '1.4rem' }} />
                 <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{isEditMode ? 'Sửa Mã Khuyến Mãi' : 'Tạo Mã Khuyến Mãi Mới'}</h2>
               </div>
-              <button type="button" className="admin-modal-close" onClick={() => setIsModalOpen(false)}>
+              <button type="button" className="admin-modal-close" onClick={() => { if (!saving) setIsModalOpen(false); }}>
                 <IoCloseOutline />
               </button>
             </div>
@@ -365,12 +380,14 @@ export default function AdminCoupons() {
               </div>
 
               <div className="admin-modal-footer">
-                <button type="button" className="admin-btn-secondary" onClick={() => setIsModalOpen(false)}>
+                <button type="button" className="admin-btn-secondary" onClick={() => { if (!saving) setIsModalOpen(false); }}>
                   Hủy
                 </button>
-                <button type="submit" className="admin-btn-primary">
+                <button type="submit" className="admin-btn-primary" disabled={saving} aria-busy={saving}>
+                  {saving ? <><IoRefreshOutline className="admin-action-spinner" /> Đang lưu…</> : <>
                   <IoCheckmarkCircleOutline style={{ fontSize: '1.1rem' }} />
                   {isEditMode ? 'Lưu Thay Đổi' : 'Tạo Coupon'}
+                </>}
                 </button>
               </div>
             </form>

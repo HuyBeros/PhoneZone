@@ -1,3 +1,5 @@
+import { useAdminFeedback } from '../../store/AdminFeedbackContext';
+import { useToast } from '../../store/ToastContext';
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../api/apiClient';
 import {
@@ -14,6 +16,8 @@ import {
 } from 'react-icons/io5';
 
 export default function AdminUsers() {
+  const { confirmAction } = useAdminFeedback();
+  const { showToast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +39,7 @@ export default function AdminUsers() {
   });
 
   const [errorMsg, setErrorMsg] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -42,7 +47,7 @@ export default function AdminUsers() {
       const data = await fetchApi('/admin/users');
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Failed to load users:', error);
+      showToast('Không thể tải danh sách tài khoản. Vui lòng thử lại.', 'error');
     } finally {
       setLoading(false);
     }
@@ -87,6 +92,7 @@ export default function AdminUsers() {
   };
 
   const closeModal = () => {
+    if (saving) return;
     setIsModalOpen(false);
   };
 
@@ -97,6 +103,8 @@ export default function AdminUsers() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     setErrorMsg('');
     try {
       if (isEditMode) {
@@ -107,6 +115,7 @@ export default function AdminUsers() {
       } else {
         if (!formData.newPassword) {
           setErrorMsg('Vui lòng nhập mật khẩu cho tài khoản mới');
+          setSaving(false);
           return;
         }
         await fetchApi('/admin/users', {
@@ -114,22 +123,30 @@ export default function AdminUsers() {
           body: JSON.stringify(formData)
         });
       }
-      closeModal();
+      setIsModalOpen(false);
       loadUsers();
+      showToast(isEditMode ? 'Đã cập nhật tài khoản.' : 'Đã thêm tài khoản.', 'success');
     } catch (err) {
       setErrorMsg(err.message || 'Có lỗi xảy ra khi lưu tài khoản');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (userId, username) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản "${username}"?`)) {
-      try {
-        await fetchApi(`/admin/users/${userId}`, { method: 'DELETE' });
-        loadUsers();
-      } catch (err) {
-        alert(err.message || 'Xóa tài khoản thất bại');
-      }
-    }
+  const handleDelete = (id) => {
+    const item = users.find(entry => entry.id === id);
+    return confirmAction({
+      title: 'Xóa tài khoản này?',
+      description: 'Kiểm tra thông tin bên dưới trước khi xác nhận xóa.',
+      resource: item?.username || `#${id}`,
+      note: 'Thao tác xóa không thể hoàn tác.',
+      confirmLabel: 'Xóa tài khoản',
+      successMessage: 'Đã xóa tài khoản.',
+      onConfirm: async () => {
+        await fetchApi(`/admin/users/${id}`, { method: 'DELETE' });
+        setUsers(previous => previous.filter(entry => entry.id !== id));
+      },
+    });
   };
 
   const filteredUsers = users.filter(u => {
@@ -429,9 +446,11 @@ export default function AdminUsers() {
                 <button type="button" className="admin-btn-secondary" onClick={closeModal}>
                   Hủy
                 </button>
-                <button type="submit" className="admin-btn-primary">
+                <button type="submit" className="admin-btn-primary" disabled={saving} aria-busy={saving}>
+                  {saving ? <><IoRefreshOutline className="admin-action-spinner" /> Đang lưu…</> : <>
                   <IoCheckmarkCircleOutline style={{ fontSize: '1.1rem' }} />
                   {isEditMode ? 'Lưu Thay Đổi' : 'Tạo Tài Khoản'}
+                </>}
                 </button>
               </div>
             </form>

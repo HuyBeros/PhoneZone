@@ -1,3 +1,5 @@
+import { useAdminFeedback } from '../../store/AdminFeedbackContext';
+import { useToast } from '../../store/ToastContext';
 import { useState, useEffect } from 'react';
 import { fetchApi } from '../../api/apiClient';
 import { fmt } from '../../utils/utils';
@@ -20,10 +22,13 @@ const REPAIR_STATUS_MAP = {
 };
 
 export default function AdminRepairs() {
+  const { confirmAction } = useAdminFeedback();
+  const { showToast } = useToast();
   const [repairs, setRepairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [updatingId, setUpdatingId] = useState(null);
 
   const loadRepairs = async () => {
     setLoading(true);
@@ -35,7 +40,7 @@ export default function AdminRepairs() {
         setRepairs(data);
       }
     } catch (err) {
-      console.error(err);
+      showToast(err.message || 'Không thể tải danh sách phiếu sửa chữa.', 'error');
     } finally {
       setLoading(false);
     }
@@ -46,25 +51,33 @@ export default function AdminRepairs() {
   }, []);
 
   const updateStatus = async (id, newStatus) => {
+    if (updatingId !== null) return;
+    setUpdatingId(id);
     try {
-      await fetchApi(`/repairs/${id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus })
-      });
-      loadRepairs();
-    } catch (e) {
-      alert(e.message || 'Cập nhật trạng thái sửa chữa thất bại');
+      await fetchApi(`/repairs/${id}/status`, { method: 'PUT', body: JSON.stringify({ status: newStatus }) });
+      setRepairs(previous => previous.map(item => item.id === id ? { ...item, status: newStatus } : item));
+      showToast(`Đã cập nhật phiếu sửa chữa: ${REPAIR_STATUS_MAP[newStatus]?.label || newStatus}.`, 'success');
+    } catch (failure) {
+      showToast(failure.message || 'Cập nhật trạng thái thất bại.', 'error');
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  const deleteRepair = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa yêu cầu sửa chữa này?')) return;
-    try {
-      await fetchApi(`/repairs/${id}`, { method: 'DELETE' });
-      loadRepairs();
-    } catch (e) {
-      alert(e.message || 'Xóa thất bại');
-    }
+  const deleteRepair = (id) => {
+    const item = repairs.find(entry => entry.id === id);
+    return confirmAction({
+      title: 'Xóa phiếu sửa chữa này?',
+      description: 'Kiểm tra thông tin bên dưới trước khi xác nhận xóa.',
+      resource: item ? `${item.deviceModel} · ${item.customerName}` : `Phiếu #${id}`,
+      note: 'Thao tác xóa không thể hoàn tác.',
+      confirmLabel: 'Xóa phiếu sửa chữa',
+      successMessage: 'Đã xóa phiếu sửa chữa.',
+      onConfirm: async () => {
+        await fetchApi(`/repairs/${id}`, { method: 'DELETE' });
+        setRepairs(previous => previous.filter(item => item.id !== id));
+      },
+    });
   };
 
   const filtered = repairs.filter(r => {
@@ -215,6 +228,8 @@ export default function AdminRepairs() {
                       <td>
                         <select
                           value={r.status}
+                          disabled={updatingId !== null}
+                          aria-busy={updatingId === r.id}
                           onChange={(e) => updateStatus(r.id, e.target.value)}
                           className="admin-status-select"
                           style={{ color: st.color, backgroundColor: st.bg, borderColor: st.color }}
@@ -232,6 +247,7 @@ export default function AdminRepairs() {
                             type="button"
                             className="admin-action-btn danger"
                             onClick={() => deleteRepair(r.id)}
+                            disabled={updatingId !== null}
                             title="Xóa phiếu sửa chữa"
                           >
                             <IoTrashOutline />

@@ -4,6 +4,7 @@ import './admin.css';
 import './admin-responsive.css';
 import { useDrawer, useMediaQuery } from '../../hooks/useDrawer';
 import { useAuth } from '../../store/AuthContext';
+import { AdminFeedbackProvider } from '../../store/AdminFeedbackContext';
 import {
   IoGridOutline,
   IoPhonePortraitOutline,
@@ -21,6 +22,10 @@ import {
 } from 'react-icons/io5';
 
 export default function AdminLayout() {
+  return <AdminFeedbackProvider><AdminLayoutContent /></AdminFeedbackProvider>;
+}
+
+function AdminLayoutContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();

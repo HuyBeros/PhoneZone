@@ -1,3 +1,5 @@
+import { useAdminFeedback } from '../../store/AdminFeedbackContext';
+import { useToast } from '../../store/ToastContext';
 import { fetchAllAdminProducts } from '../../api/adminProducts';
 import { useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '../../api/apiClient';
@@ -16,11 +18,14 @@ import {
 } from 'react-icons/io5';
 
 export default function AdminProducts() {
+  const { confirmAction } = useAdminFeedback();
+  const { showToast } = useToast();
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Filter & Search states
   const [keyword, setKeyword] = useState('');
@@ -52,11 +57,11 @@ export default function AdminProducts() {
         setAllProducts(res);
       }
     } catch (err) {
-      console.error(err);
+      showToast(err.message || 'Không thể tải danh sách sản phẩm.', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     loadProducts();
@@ -86,6 +91,8 @@ export default function AdminProducts() {
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
   const paginatedProducts = filteredProducts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  useEffect(() => { setPage(current => Math.min(current, totalPages - 1)); }, [totalPages]);
 
   const openAddModal = () => {
     setFormData({
@@ -129,6 +136,8 @@ export default function AdminProducts() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     setErrorMsg('');
     try {
       if (isEditMode) {
@@ -144,20 +153,28 @@ export default function AdminProducts() {
       }
       setIsModalOpen(false);
       loadProducts();
+      showToast(isEditMode ? 'Đã cập nhật sản phẩm.' : 'Đã thêm sản phẩm.', 'success');
     } catch (err) {
       setErrorMsg(err.message || 'Có lỗi xảy ra khi lưu sản phẩm');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này khỏi PhoneZone?')) {
-      try {
+  const handleDelete = (id) => {
+    const item = allProducts.find(entry => entry.id === id);
+    return confirmAction({
+      title: 'Xóa sản phẩm này?',
+      description: 'Kiểm tra thông tin bên dưới trước khi xác nhận xóa.',
+      resource: item?.tenSanPham || `#${id}`,
+      note: 'Thao tác xóa không thể hoàn tác.',
+      confirmLabel: 'Xóa sản phẩm',
+      successMessage: 'Đã xóa sản phẩm.',
+      onConfirm: async () => {
         await fetchApi(`/admin/products/${id}`, { method: 'DELETE' });
-        loadProducts();
-      } catch (err) {
-        alert(err.message || 'Xóa thất bại');
-      }
-    }
+        setAllProducts(previous => previous.filter(entry => entry.id !== id));
+      },
+    });
   };
 
   const handleResetFilters = () => {
@@ -375,7 +392,7 @@ export default function AdminProducts() {
 
       {/* Modal Thêm/Sửa */}
       {isModalOpen && (
-        <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div className="admin-modal-overlay" onClick={() => { if (!saving) setIsModalOpen(false); }}>
           <div className="admin-modal" onClick={e => e.stopPropagation()}>
             <div className="admin-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -385,7 +402,7 @@ export default function AdminProducts() {
               <button
                 type="button"
                 className="admin-modal-close"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => { if (!saving) setIsModalOpen(false); }}
               >
                 <IoCloseOutline />
               </button>
@@ -479,12 +496,14 @@ export default function AdminProducts() {
               </div>
 
               <div className="admin-modal-footer">
-                <button type="button" className="admin-btn-secondary" onClick={() => setIsModalOpen(false)}>
+                <button type="button" className="admin-btn-secondary" onClick={() => { if (!saving) setIsModalOpen(false); }}>
                   Hủy
                 </button>
-                <button type="submit" className="admin-btn-primary">
+                <button type="submit" className="admin-btn-primary" disabled={saving} aria-busy={saving}>
+                  {saving ? <><IoRefreshOutline className="admin-action-spinner" /> Đang lưu…</> : <>
                   <IoCheckmarkCircleOutline style={{ fontSize: '1.1rem' }} />
                   {isEditMode ? 'Lưu Thay Đổi' : 'Thêm Sản Phẩm'}
+                </>}
                 </button>
               </div>
             </form>

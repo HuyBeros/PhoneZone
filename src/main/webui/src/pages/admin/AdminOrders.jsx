@@ -1,3 +1,4 @@
+import { useAdminFeedback } from '../../store/AdminFeedbackContext';
 import { useState, useEffect } from 'react';
 import { useToast } from '../../store/ToastContext';
 import { fetchApi } from '../../api/apiClient';
@@ -25,9 +26,11 @@ const STATUS_CONFIG = {
 };
 
 export default function AdminOrders() {
+  const { confirmAction } = useAdminFeedback();
   const { showToast } = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,21 +63,35 @@ export default function AdminOrders() {
 
   const hasActiveFilter = searchTerm || statusFilter !== 'ALL';
 
+  const performStatusUpdate = async (orderId, newStatus) => {
+    const updated = await fetchApi(`/admin/orders/${orderId}/status`, { method: 'PUT', body: JSON.stringify({ status: newStatus }) });
+    setOrders(previous => previous.map(order => order.id === orderId ? { ...order, ...updated, status: newStatus } : order));
+    setSelectedOrder(previous => previous?.id === orderId ? { ...previous, ...updated, status: newStatus } : previous);
+  };
+
   const updateStatus = async (orderId, newStatus) => {
+    if (updatingId !== null) return;
+    setUpdatingId(orderId);
     try {
-      await fetchApi(`/admin/orders/${orderId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus })
-      });
-      showToast(`Đã chuyển trạng thái đơn #${orderId} sang "${newStatus}"`, 'success');
-      loadOrders();
-      if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-    } catch (err) {
-      showToast('Cập nhật trạng thái thất bại: ' + err.message, 'error');
+      await performStatusUpdate(orderId, newStatus);
+      showToast(`Đã cập nhật đơn #${orderId}: ${newStatus}.`, 'success');
+    } catch (failure) {
+      showToast(failure.message || 'Cập nhật trạng thái đơn hàng thất bại.', 'error');
+    } finally {
+      setUpdatingId(null);
     }
   };
+
+  const cancelOrder = (order) => confirmAction({
+    title: 'Hủy đơn hàng này?',
+    description: 'Đơn hàng sẽ chuyển sang trạng thái đã hủy.',
+    resource: `Đơn #${order.id} · ${order.customerName}`,
+    note: 'Với đơn COD/BANK, hệ thống sẽ hoàn tồn kho và coupon theo quy tắc của đơn hàng.',
+    confirmLabel: 'Hủy đơn hàng',
+    pendingLabel: 'Đang hủy…',
+    successMessage: `Đã hủy đơn hàng #${order.id}.`,
+    onConfirm: () => performStatusUpdate(order.id, 'Đã hủy'),
+  });
 
   // Filter orders
   const filteredOrders = orders.filter(o => {
@@ -235,6 +252,7 @@ export default function AdminOrders() {
                                 className="admin-action-btn approve"
                                 title="Xác nhận & Giao hàng"
                                 onClick={() => updateStatus(o.id, 'Admin xác nhận & giao')}
+                                disabled={updatingId !== null}
                               >
                                 <IoCheckmarkOutline />
                               </button>
@@ -242,11 +260,8 @@ export default function AdminOrders() {
                                 type="button"
                                 className="admin-action-btn danger"
                                 title="Hủy đơn hàng"
-                                onClick={() => {
-                                  if (window.confirm(`Hủy đơn hàng #${o.id}?`)) {
-                                    updateStatus(o.id, 'Đã hủy');
-                                  }
-                                }}
+                                onClick={() => cancelOrder(o)}
+                                disabled={updatingId !== null}
                               >
                                 <IoCloseOutline />
                               </button>
@@ -260,6 +275,7 @@ export default function AdminOrders() {
                                 className="admin-action-btn complete"
                                 title="Xác nhận đã giao thành công"
                                 onClick={() => updateStatus(o.id, 'Hoàn thành')}
+                                disabled={updatingId !== null}
                               >
                                 <IoCheckmarkDoneOutline />
                               </button>
@@ -267,11 +283,8 @@ export default function AdminOrders() {
                                 type="button"
                                 className="admin-action-btn danger"
                                 title="Khách từ chối / Hủy đơn"
-                                onClick={() => {
-                                  if (window.confirm(`Hủy đơn hàng #${o.id}?`)) {
-                                    updateStatus(o.id, 'Đã hủy');
-                                  }
-                                }}
+                                onClick={() => cancelOrder(o)}
+                                disabled={updatingId !== null}
                               >
                                 <IoCloseOutline />
                               </button>
@@ -412,6 +425,7 @@ export default function AdminOrders() {
                   type="button"
                   className="admin-btn-primary"
                   onClick={() => updateStatus(selectedOrder.id, 'Admin xác nhận & giao')}
+                  disabled={updatingId !== null}
                 >
                   <IoCheckmarkOutline style={{ fontSize: '1.1rem' }} />
                   Xác nhận &amp; Giao hàng
@@ -423,6 +437,7 @@ export default function AdminOrders() {
                   type="button"
                   className="admin-btn-success"
                   onClick={() => updateStatus(selectedOrder.id, 'Hoàn thành')}
+                  disabled={updatingId !== null}
                 >
                   <IoCheckmarkDoneOutline style={{ fontSize: '1.1rem' }} />
                   Hoàn tất giao hàng

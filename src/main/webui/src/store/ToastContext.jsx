@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 
 const ToastContext = createContext();
 
@@ -6,26 +6,35 @@ let toastId = 0;
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
-
-  const showToast = useCallback((msg, type = 'success', duration = 3000) => {
-    const id = ++toastId;
-    setToasts(prev => [...prev, { id, msg, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.map(t => t.id === id ? { ...t, leaving: true } : t));
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== id));
-      }, 350);
-    }, duration);
-  }, []);
+  const expiryTimers = useRef(new Map());
+  const exitTimers = useRef(new Map());
 
   const removeToast = useCallback((id) => {
+    clearTimeout(expiryTimers.current.get(id));
+    expiryTimers.current.delete(id);
+    if (exitTimers.current.has(id)) return;
     setToasts(prev => prev.map(t => t.id === id ? { ...t, leaving: true } : t));
-    setTimeout(() => {
+    exitTimers.current.set(id, setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 350);
+      exitTimers.current.delete(id);
+    }, 250));
   }, []);
 
-  // Legacy support: keep toast/setToast shape for old code
+  const showToast = useCallback((msg, type = 'success', duration = type === 'error' ? 6000 : 4000) => {
+    const id = ++toastId;
+    setToasts(prev => [...prev, { id, msg, type, duration }]);
+    expiryTimers.current.set(id, setTimeout(() => removeToast(id), duration));
+    return id;
+  }, [removeToast]);
+
+  useEffect(() => () => {
+    expiryTimers.current.forEach(clearTimeout);
+    exitTimers.current.forEach(clearTimeout);
+    expiryTimers.current.clear();
+    exitTimers.current.clear();
+  }, []);
+
+  // Preserve the existing context shape for storefront consumers.
   const toast = toasts[0] || { msg: '', show: false };
 
   return (
